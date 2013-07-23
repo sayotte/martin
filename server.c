@@ -57,7 +57,7 @@ int handle_client(int client)
 
 void init_logging()
 {
-        openlog("toothpaste-server", LOG_PID | LOG_PERROR, LOG_LOCAL0);
+        openlog("martin", LOG_PID | LOG_PERROR, LOG_LOCAL0);
         setlogmask(LOG_UPTO(LOG_DEBUG));
 
         return;

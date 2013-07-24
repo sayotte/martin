@@ -63,8 +63,8 @@ int route_request(int client, struct message *m)
        404 */
     if(status < 0)
     {
-        ; // TODO send a 404 here
-        return 2; // FIXME returning error for the time being, there should be a default 404 handler though
+        ; /* TODO send a 404 here */
+        return 2; /* FIXME returning error for the time being, there should be a default 404 handler though */
     }
     /* Otherwise, grab the handler associated with the route */
     handler = routes[i].handler;
@@ -85,7 +85,8 @@ int route_request(int client, struct message *m)
             splat[i] = calloc(substring_len + 1, sizeof(char));
             strncpy(splat[i], &m->request_path[outputvec[2*i]], substring_len);
 
-            //printf("Match %d: '%s'\n", i, splat[i]);
+            /*printf("Match %d: '%s'\n", i, splat[i]);
+            */
         }
     }
 

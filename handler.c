@@ -46,13 +46,13 @@ int get_transaction(int fd, struct message *m, char **splat, int splat_len)
     init_response_header(&h);
     add_response_header(&h, "Connection: close");
 
-//    h.content_length = strlen(splat[1]) + 2;
-
+/*    h.content_length = strlen(splat[1]) + 2;
+*/
     send_header(fd, &h);
 
-//    write(fd, splat[1], strlen(splat[1]));
-//    write(fd, "\r\n", 2);
-
+/*    write(fd, splat[1], strlen(splat[1]));
+    write(fd, "\r\n", 2);
+*/
     send_response_chunk(fd, splat[1], strlen(splat[1]));
     send_response_chunk(fd, "\r\n", 2);
     end_response_chunks(fd);

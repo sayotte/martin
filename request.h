@@ -16,7 +16,7 @@ int on_body(http_parser *parser, const char *at, size_t len);
 
 /* This structure definition lifted from https://github.com/joyent/http-parser/blob/master/test.c */
 struct message {
-  const char *name; // for debugging purposes
+  const char *name; /* for debugging purposes */
   const char *raw;
   enum http_parser_type type;
   enum http_method method;
@@ -35,7 +35,7 @@ struct message {
   char headers [MAX_HEADERS][2][MAX_ELEMENT_SIZE];
   int should_keep_alive;
 
-  const char *upgrade; // upgraded body
+  const char *upgrade; /* upgraded body */
 
   unsigned short http_major;
   unsigned short http_minor;

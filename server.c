@@ -67,7 +67,7 @@ int main(int argc, char** argv)
 {
     struct sockaddr_in servaddr, clientaddr;
     int error = 0, server, client;
-    int port = 8080; // statically defined!
+    int port = 8080; /* statically defined! */
     socklen_t clientaddr_len;
     int optval;
 

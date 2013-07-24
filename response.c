@@ -134,7 +134,8 @@ void send_response_chunk(int client, char *buf, int size)
     char    sizeline[64];
 
     syslog(LOG_DEBUG, "%s():...", __func__);
-    //syslog(LOG_DEBUG, "%s(%d, %s, %d):...", __func__, client, buf, size);
+    /*syslog(LOG_DEBUG, "%s(%d, %s, %d):...", __func__, client, buf, size);
+    */
    
     /* Send the size header, e.g. "4\r\n" if we're about to send a 4-byte chunk */
     snprintf(sizeline, 64, "%X\r\n", size);

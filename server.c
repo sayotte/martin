@@ -29,7 +29,7 @@ int handle_client(int client)
     
     parser = malloc(sizeof(http_parser));
     http_parser_init(parser, HTTP_REQUEST);
-    parser->data = client;
+    parser->data = &client;
 
     while(1)
     {

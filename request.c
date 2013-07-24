@@ -57,7 +57,7 @@ int on_message_complete(http_parser *parser)
 
     puts("-------- response should be generated at this point ---------");
 
-    route_request(parser->data, &GMSG);
+    route_request(*(int *)parser->data, &GMSG);
 
     return 0;
 }

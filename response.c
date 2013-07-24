@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "response.h"
+#include "util.h"
 
 #define MAX_HEADER_LENGTH 2048
 
@@ -136,7 +137,7 @@ void send_response_chunk(int client, char *buf, int size)
     //syslog(LOG_DEBUG, "%s(%d, %s, %d):...", __func__, client, buf, size);
    
     /* Send the size header, e.g. "4\r\n" if we're about to send a 4-byte chunk */
-    snprintf(sizeline, 64, "%X\r\n\0", size);
+    snprintf(sizeline, 64, "%X\r\n", size);
     write(client, sizeline, strlen(sizeline));
 
     write(client, buf, size);

@@ -86,6 +86,7 @@ int get_static(int fd, struct message *m, char **splat, int splat_len)
                 snprintf(response_buf, size, r403_template, splat[0]);
                 size = strlen(response_buf);
                 h.status = 403;
+                h.content_type = "text/html";
                 h.status_desc = "Forbidden";
                 h.content_length = size;
 
@@ -100,6 +101,7 @@ int get_static(int fd, struct message *m, char **splat, int splat_len)
                 snprintf(response_buf, size, r404_template, splat[0]);
                 size = strlen(response_buf);
                 h.status = 404;
+                h.content_type = "text/html";
                 h.status_desc = "Not Found";
                 h.content_length = size;
 

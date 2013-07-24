@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+
 
 void gen_date_header(char* dest)
 {
@@ -16,3 +18,15 @@ void gen_date_header(char* dest)
 
     return;
 }
+
+#define _FILE_OFFSET_BITS 64
+
+off_t fsize(const char *filename) {
+    struct stat st;
+
+    if (stat(filename, &st) == 0)
+        return st.st_size;
+
+    return -1;
+}
+    

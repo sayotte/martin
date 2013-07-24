@@ -19,17 +19,6 @@ static char* r400_response =
     " </body>\r\n"
     "</html>\r\n";
 
-static char* r404_template = 
-    "HTTP/1.1 404 Not Found\r\n"
-    "Content-type: text/html\r\n"
-    "\r\n"
-    "<html>\r\n"
-    " <body>\r\n"
-    "  <h1>Not Found</h1>\r\n"
-    "  <p>The requested URL %s was not found on this server.</p>\r\n"
-    " </body>\r\n"
-    "</html>\r\n";
-
 static char* r501_template = 
     "HTTP/1.1 501 Method Not Implemented\r\n"
     "Content-type: text/html\r\n"
@@ -143,7 +132,8 @@ void send_response_chunk(int client, char *buf, int size)
 {
     char    sizeline[64];
 
-    syslog(LOG_DEBUG, "%s(%d, %s, %d):...", __func__, client, buf, size);
+    syslog(LOG_DEBUG, "%s():...", __func__);
+    //syslog(LOG_DEBUG, "%s(%d, %s, %d):...", __func__, client, buf, size);
    
     /* Send the size header, e.g. "4\r\n" if we're about to send a 4-byte chunk */
     snprintf(sizeline, 64, "%X\r\n\0", size);
@@ -157,6 +147,7 @@ void send_response_chunk(int client, char *buf, int size)
 
 void end_response_chunks(int client)
 {
+    syslog(LOG_DEBUG, "%s():...", __func__);
     write(client, "0\r\n\r\n", 5);
 
     return;

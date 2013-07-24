@@ -13,3 +13,6 @@ void send_header(int client, header_t *h);
 void init_response_header(header_t *h);
 void cleanup_response_header(header_t *h);
 void add_response_header(header_t *h, char* hdr);
+
+void send_response_chunk(int client, char *buf, int size);
+void end_response_chunks(int client);

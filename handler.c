@@ -83,7 +83,7 @@ int get_static(int fd, struct message *m, char **splat, int splat_len)
             case EACCES:
                 size = strlen(filename) + strlen(r403_template) + 1;
                 response_buf = malloc(size);
-                snprintf(response_buf, size, r403_template, splat[1]);
+                snprintf(response_buf, size, r403_template, splat[0]);
                 size = strlen(response_buf);
                 h.status = 403;
                 h.status_desc = "Forbidden";
@@ -97,7 +97,7 @@ int get_static(int fd, struct message *m, char **splat, int splat_len)
             default:
                 size = strlen(filename) + strlen(r404_template) + 1;
                 response_buf = malloc(size);
-                snprintf(response_buf, size, r404_template, splat[1]);
+                snprintf(response_buf, size, r404_template, splat[0]);
                 size = strlen(response_buf);
                 h.status = 404;
                 h.status_desc = "Not Found";

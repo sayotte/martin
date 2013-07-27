@@ -1,11 +1,11 @@
-#include <syslog.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdio.h> /* not needed when printf is removed */
 #include <sys/mman.h>
-#include <fcntl.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h> /* not needed when printf is removed */
 #include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <unistd.h>
 #include "response.h"
 #include "request.h"
 #include "util.h"
@@ -71,7 +71,7 @@ int get_static(int fd, struct message *m, char **splat, int splat_len)
     int         error;
     int         fh;
 
-    syslog(LOG_DEBUG, "%S():...", __func__);
+    syslog(LOG_DEBUG, "%s():...", __func__);
 
     init_response_header(&h);
 

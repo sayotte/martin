@@ -4,7 +4,6 @@
 #include <string.h>
 #include <sys/stat.h>
 
-
 void gen_date_header(char* dest)
 {
     time_t  now;

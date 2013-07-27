@@ -1,3 +1,4 @@
+#include <sys/types.h>
 #include <stdio.h>
 #include <syslog.h>
 #include <unistd.h>
@@ -8,7 +9,7 @@
 
 #define MAX_HEADER_LENGTH 2048
 
-
+/*
 static char* r400_response = 
     "HTTP/1.1 400 Bad Request\r\n"
     "Content-type: text/html\r\n"
@@ -30,6 +31,8 @@ static char* r501_template =
     "  <p>The method %s is not implemented by this server.</p>\r\n"
     " </body>\r\n"
     "</html>\r\n";
+
+*/
 
 void init_response_header(header_t *h)
 {

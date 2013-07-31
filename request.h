@@ -46,4 +46,12 @@ struct message {
   int message_complete_on_eof;
   int body_is_final;
 };
+
+typedef struct request {
+    struct message  msg;
+    int             fd;
+} request_t;
+
 #endif
+
+

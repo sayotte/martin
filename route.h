@@ -13,4 +13,4 @@ extern route_t  *GROUTES;
 extern int      GNUM_ROUTES;
 
 int setup_routes();
-int route_request(int client, struct message *m);
+int route_request(struct request *req);

@@ -23,6 +23,7 @@ int handle_client(int client)
     int                     nparsed;
     char                    buf[MAX_ELEMENT_SIZE];
     ssize_t                 recved;
+    request_t               *req;
 
     settings.on_message_begin = on_message_begin;
     settings.on_message_complete = on_message_complete;
@@ -35,7 +36,10 @@ int handle_client(int client)
     
     parser = malloc(sizeof(http_parser));
     http_parser_init(parser, HTTP_REQUEST);
-    parser->data = &client;
+
+    req = malloc(sizeof(request_t));
+    req->fd = client;
+    parser->data = req;
 
     while(1)
     {

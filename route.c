@@ -6,7 +6,7 @@
 
 route_t *GROUTES;
 
-int route_request(int client, struct message *m)
+int route_request(struct request *req)
 {
     route_t     *routes;
     int         i;
@@ -16,8 +16,12 @@ int route_request(int client, struct message *m)
     char        *splat[MAX_OVECS / 2];
     int         substring_len;
     int         splat_len;
+    int         client;
+    struct message  *m;
     int (*handler)(int, struct message*, char**, int);
     
+    client = req->fd;
+    m = &req->msg;
 
     syslog(LOG_DEBUG, "%s():...", __func__);
 

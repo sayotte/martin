@@ -7,8 +7,6 @@
 #include "http_parser.h"
 #include "route.h"
 
-struct message GMSG;
-
 void describe_request(struct message *m)
 {
     int     i;
@@ -46,8 +44,13 @@ void describe_request(struct message *m)
 
 int on_message_begin(http_parser *parser)
 {
+    struct request  *req;
+    struct message  *msg;
+
+    req = parser->data;
+    msg = &req->msg;
     syslog(LOG_DEBUG, "%s()...", __func__);
-    memset(&GMSG, 0, sizeof(struct message));
+    memset(msg, 0, sizeof(struct message));
     return 0;
 }
 
@@ -57,7 +60,7 @@ int on_message_complete(http_parser *parser)
 
     puts("-------- response should be generated at this point ---------");
 
-    route_request(*(int *)parser->data, &GMSG);
+    route_request((struct request *)parser->data);
 
     return 0;
 }
@@ -65,8 +68,12 @@ int on_message_complete(http_parser *parser)
 int on_url(http_parser *parser, const char *at, size_t len)
 {
     char    tok[256];
+    struct request  *req;
+
+    req = parser->data;
+
     /* Append to the growing URL; we'll break it down later */
-    strncat(GMSG.request_url, at, len);
+    strncat(&req->msg.request_url, at, len);
 
     /* debugging stuff...*/
     strncpy(tok, at, len);
@@ -85,15 +92,20 @@ int on_status_complete(http_parser *parser)
 int on_header_field(http_parser *parser, const char *at, size_t len)
 {
     char    tok[256];
+    struct request  *req;
+    struct message  *msg;
+
+    req = parser->data;
+    msg = &req->msg;
 
     /* If we were last working on a value, we're in a new header now.
        Otherwise, append to the one we've partially completed. */
-    if(GMSG.last_header_element == VALUE)
+    if(msg->last_header_element == VALUE)
     {
-        GMSG.num_headers++;
+        msg->num_headers++;
     }
-    strncat(GMSG.headers[GMSG.num_headers][0], at, len);
-    GMSG.last_header_element = FIELD;
+    strncat(msg->headers[msg->num_headers][0], at, len);
+    msg->last_header_element = FIELD;
 
     /* debugging stuff...*/
     strncpy(tok, at, len);
@@ -106,9 +118,14 @@ int on_header_field(http_parser *parser, const char *at, size_t len)
 int on_header_value(http_parser *parser, const char *at, size_t len)
 {
     char    tok[256];
+    struct request  *req;
+    struct message  *msg;
 
-    strncat(GMSG.headers[GMSG.num_headers][1], at, len);
-    GMSG.last_header_element = VALUE;
+    req = parser->data;
+    msg = &req->msg;
+
+    strncat(msg->headers[msg->num_headers][1], at, len);
+    msg->last_header_element = VALUE;
 
     /* debugging stuff...*/
     strncpy(tok, at, len);
@@ -121,23 +138,31 @@ int on_header_value(http_parser *parser, const char *at, size_t len)
 int on_headers_complete(http_parser *parser)
 {
     int     pathlen;
+    struct request  *req;
+    struct message  *msg;
+
+    req = parser->data;
+    msg = &req->msg;
     syslog(LOG_DEBUG, "%s()...", __func__);
 
     /* Break down the url into the path and query-string */
-    pathlen = strcspn(GMSG.request_url, "?");
-    strncpy(GMSG.request_path, GMSG.request_url, pathlen);
-    GMSG.request_path[pathlen] = '\0';
-    strcpy(GMSG.query_string, &GMSG.request_url[pathlen+1]);
+    pathlen = strcspn(msg->request_url, "?");
+    strncpy(msg->request_path, msg->request_url, pathlen);
+    msg->request_path[pathlen] = '\0';
+    strcpy(msg->query_string, &msg->request_url[pathlen+1]);
 
-    GMSG.method = parser->method;
+    msg->method = parser->method;
 
-    describe_request(&GMSG);
+    describe_request(msg);
     return 0;
 }
 
 int on_body(http_parser *parser, const char *at, size_t len)
 {
-    strncat(GMSG.body, at, len);
+    struct request  *req;
+
+    req = parser->data;
+    strncat(req->msg.body, at, len);
 
     syslog(LOG_DEBUG, "%s():...", __func__);
     return 0;

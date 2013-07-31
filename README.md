@@ -13,4 +13,5 @@ If you still want to take a look... well, I haven't written any documentation ye
    * main() lives in server.c
    * martin uses http-parser (https://github.com/joyent/http-parser) to parse requests
    * martin uses PCRE (http://www.pcre.org/) to match and route requests to appropriate handlers
+   * martin will soon be using libev (http://software.schmorp.de/pkg/libev) for its event-loop
 

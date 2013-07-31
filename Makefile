@@ -1,11 +1,15 @@
+HTTP_PARSER_PATH = http-parser
+PCRE_PATH = pcre
+
 CC = gcc
 CFLAGS = --std=gnu99 -ggdb -Wall -ansi
-CPPFLAGS = -Ihttp-parser/ -Ipcre/include -D_GNU_SOURCE
-LIBS = http-parser/http_parser.o pcre/lib/libpcre.a -lpthread
+CPPFLAGS = -I$(HTTP_PARSER_PATH)/ -I$(PCRE_PATH)/include -D_GNU_SOURCE
+LDFLAGS = -Wl,-rpath=$(PCRE_PATH)/lib/
+LIBS = $(HTTP_PARSER_PATH)/http_parser.o $(PCRE_PATH)/lib/libpcre.so.1 -lpthread
 OBJS = server.o request.o routes.o templates.o handler.o route.o response.o util.o main.o
 
 go: $(OBJS)
-	gcc -o go $(OBJS) $(LIBS)
+	gcc -o go $(LDFLAGS) $(OBJS) $(LIBS)
 
 routes.o: routes.c
 

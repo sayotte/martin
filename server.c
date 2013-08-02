@@ -10,61 +10,18 @@
 #include <syslog.h>
 #include <unistd.h>
 #include "http_parser.h"
+#include "ev.h"
 #include "request.h"
 #include "route.h"
 #include "server.h"
 
 #include <stdio.h>
 
-int handle_client(int client)
-{
-    http_parser_settings    settings;
-    http_parser             *parser;
-    int                     nparsed;
-    char                    buf[MAX_ELEMENT_SIZE];
-    ssize_t                 recved;
-    request_t               *req;
-
-    settings.on_message_begin = on_message_begin;
-    settings.on_message_complete = on_message_complete;
-    settings.on_url = on_url;
-    settings.on_status_complete = on_status_complete;
-    settings.on_header_field = on_header_field;
-    settings.on_header_value = on_header_value;
-    settings.on_headers_complete = on_headers_complete;
-    settings.on_body = on_body;
-    
-    parser = malloc(sizeof(http_parser));
-    http_parser_init(parser, HTTP_REQUEST);
-
-    req = malloc(sizeof(request_t));
-    req->fd = client;
-    parser->data = req;
-
-    while(1)
-    {
-        recved = recv(client, buf, MAX_ELEMENT_SIZE, 0);
-        if(recved < 0)
-        {
-            syslog(LOG_DEBUG, "%s(): recv() spit an error: %s", __func__, strerror(errno));
-            break;
-        }
-        else if(recved == 0)
-        {
-            syslog(LOG_DEBUG, "%s(): remote peer closed the connection", __func__);
-            break;
-        }
-        nparsed = http_parser_execute(parser, &settings, buf, recved);
-
-        if(nparsed != recved)
-            ; /* FIXME do something here */
-    }
-
-    close(client);
-    free(parser);
-
-    return 0;
-}
+void init_logging();
+int setup_listen_socket(int *fd);
+int start_server();
+static void accept_cb(struct ev_loop *loop, ev_io *w, int revents);
+static void clientread_cb(struct ev_loop *loop, ev_io *w, int revents);
 
 void init_logging()
 {
@@ -117,11 +74,10 @@ int setup_listen_socket(int *fd)
     
 int start_server()
 {
-    int                 listen;
-    int                 error;
-    int                 client; 
-    struct sockaddr     clientaddr;
-    socklen_t           clientaddr_len;
+    int             listen;
+    int             error;
+    ev_io           *accept_watcher;
+    struct ev_loop  *loop;
 
     init_logging();
 
@@ -136,23 +92,111 @@ int start_server()
     if(error != 0)
         return 2;
 
+    accept_watcher = malloc(sizeof(ev_io));
+    loop = EV_DEFAULT;
+    ev_io_init(accept_watcher, accept_cb, listen, EV_READ);
+    ev_io_start(loop, accept_watcher);
+
+    error = ev_run(loop, 0);
+    syslog(LOG_DEBUG, "%s(): ev_run() returned %d", __func__, error);
+
+    free(accept_watcher);
+    close(listen);
+    return 0;
+}
+
+typedef struct {
+    http_parser             *parser;
+    http_parser_settings    *parser_settings;
+} client_t;
+
+static void accept_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+    int                 clientfd; 
+    struct sockaddr     clientaddr;
+    socklen_t           clientaddr_len;
+    ev_io               *client_read_watcher;
+    client_t            *c;
+    struct request      *req;
+
     clientaddr_len = sizeof(clientaddr);
-    while(1)
+    syslog(LOG_DEBUG, "%s(): accepting connection\n", __func__);
+    clientfd = accept(w->fd, (struct sockaddr *)&clientaddr, &clientaddr_len);
+    if(clientfd == -1)
     {
-        syslog(LOG_DEBUG, "%s(): accepting connection\n", __func__);
-        client = accept(listen, (struct sockaddr *)&clientaddr, &clientaddr_len);
-        if(client == -1)
-        {
-            syslog(LOG_ERR, "%s(): Failed to accept connection on socket: %s\n", __func__, strerror(errno));
-            return 3;
-        }
-        syslog(LOG_DEBUG, "%s(): accepted a connection", __func__);
-    
-        error = handle_client(client);
-        if(error)
-        {
-            syslog(LOG_DEBUG, "%s(): handle_client() returned %d", __func__, error);
-        }
+        syslog(LOG_ERR, "%s(): Failed to accept connection on socket: %s\n", __func__, strerror(errno));
+        return;
     }
+    syslog(LOG_DEBUG, "%s(): accepted a connection", __func__);
+
+    c = malloc(sizeof(client_t));
+    c->parser = malloc(sizeof(http_parser));
+    c->parser_settings = malloc(sizeof(http_parser_settings));
+    req = malloc(sizeof(request_t));
+    req->fd = clientfd;
+    c->parser->data = req;
+
+    c->parser_settings->on_message_begin = on_message_begin;
+    c->parser_settings->on_message_complete = on_message_complete;
+    c->parser_settings->on_url = on_url;
+    c->parser_settings->on_status_complete = on_status_complete;
+    c->parser_settings->on_header_field = on_header_field;
+    c->parser_settings->on_header_value = on_header_value;
+    c->parser_settings->on_headers_complete = on_headers_complete;
+    c->parser_settings->on_body = on_body;
+
+    http_parser_init(c->parser, HTTP_REQUEST);
+
+    client_read_watcher = malloc(sizeof(ev_io));
+    client_read_watcher->data = c;
+    ev_io_init(client_read_watcher, clientread_cb, clientfd, EV_READ);
+
+    ev_io_start(loop, client_read_watcher);
+    return;
+}
+
+static void clientread_cb(struct ev_loop *loop, ev_io *w, int revents)
+{
+    int                     nparsed;
+    char                    buf[MAX_ELEMENT_SIZE];
+    ssize_t                 recved;
+    client_t                *c;
+    request_t               *req;
+
+    c = w->data;
+    req = c->parser->data;
+
+    recved = recv(req->fd, buf, MAX_ELEMENT_SIZE, 0);
+    if(recved < 0)
+    {   
+        syslog(LOG_DEBUG, "%s(): recv() spit an error: '%s', cleaning up and closing the socket", __func__, strerror(errno));
+        ev_io_stop(loop, w);
+        close(w->fd);
+        free(w);
+        free(c->parser->data);
+        free(c->parser);
+        free(c->parser_settings);
+        free(c);
+    }
+    else if(recved == 0)
+    {   
+        syslog(LOG_DEBUG, "%s(): remote peer closed the connection, cleaning up and closing the socket", __func__);
+        ev_io_stop(loop, w);
+        close(w->fd);
+        free(w);
+        free(c->parser->data);
+        free(c->parser);
+        free(c->parser_settings);
+        free(c);
+    }
+    else
+    {
+        nparsed = http_parser_execute(c->parser, c->parser_settings, buf, recved);
+
+        if(nparsed != recved)
+            ; /* FIXME do something here */
+    }
+
+    return;
 }
 

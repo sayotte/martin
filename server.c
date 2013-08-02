@@ -73,33 +73,7 @@ void init_logging()
 
         return;
 }
-/*
-pthread_mutex_t *setup_shared_mutex()
-{
-    pthread_mutex_t     *mtx;
-    pthread_mutexattr_t attr;
-    int                 error;
-    
-    mtx = mmap(NULL, sizeof(pthread_mutex_t), PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANON, -1, 0);
-    if(mtx == MAP_FAILED)
-    {
-        syslog(LOG_CRIT, "%s(): mmap() failed: %s", __func__, strerror(errno));
-        return NULL;
-    }
 
-    pthread_mutexattr_init(&attr);
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
-    pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
-    error = pthread_mutex_init(mtx, &attr);
-    if(error)
-    {
-        syslog(LOG_CRIT, "%s(): pthread_mutex_init() failed: %s", __func__, strerror(error));
-        return NULL;
-    }
-
-    return mtx;
-}
-*/
 int setup_listen_socket(int *fd)
 {
     struct sockaddr_in  servaddr;
@@ -141,14 +115,6 @@ int setup_listen_socket(int *fd)
     return 0;
 }
     
-/*
-#define fork_worker()\
-  syslog(LOG_DEBUG, "%s(): Forking a worker process", __func__);\
-  mypid = fork();\
-  if(mypid == 0)\
-    return(worker_loop(&ms));
-*/
-
 int start_server()
 {
     int                 listen;
@@ -169,30 +135,6 @@ int start_server()
     error = setup_listen_socket(&listen);
     if(error != 0)
         return 2;
-/*
-    for(i=0; i < MAX_WORKERS; i++)
-    {
-        fork_worker();
-    }
-
-    while(1)
-    {
-        error = waitpid(-1, &status, WNOHANG);
-        if(error > 0)
-        {
-            if(WIFEXITED(status))
-            {
-                syslog(LOG_DEBUG, "%s(): Worker process exited with status %d", __func__, WEXITSTATUS(status));
-
-                fork_worker();
-            }
-        }
-        else if(error < 0)
-        {
-            syslog(LOG_ERR, "%s(): waitpid() failed: %s", __func__, strerror(errno));
-        }
-    }
-*/
 
     clientaddr_len = sizeof(clientaddr);
     while(1)
@@ -214,41 +156,3 @@ int start_server()
     }
 }
 
-/*
-int worker_loop(master_socket_t *ms)
-{
-    int                 i, error;
-    int                 client;
-    struct sockaddr_in  clientaddr;
-    socklen_t           clientaddr_len;
-
-    clientaddr_len = sizeof(clientaddr);
-    for(i=0; i < MAX_CONNS_PROCESSED; i++)
-    {
-        error = pthread_mutex_lock(ms->mtx);
-        if(error)
-        {
-            syslog(LOG_ERR, "%s(): pthread_mutex_lock() failed: %s", __func__, strerror(error));
-            return 1;
-        }
-        syslog(LOG_DEBUG, "%s(): accepting connection %d of %d max-allowed\n", __func__, i, MAX_CONNS_PROCESSED);
-        client = accept(ms->fd, (struct sockaddr *)&clientaddr, &clientaddr_len);
-        pthread_mutex_unlock(ms->mtx);
-        if(client == -1)
-        {
-            syslog(LOG_ERR, "%s(): Failed to accept connection on socket: %s\n", __func__, strerror(errno));
-            return 2;
-        }
-        syslog(LOG_DEBUG, "%s(): accepted a connection", __func__);
-
-        error = handle_client(client);
-        if(error)
-        {
-            syslog(LOG_DEBUG, "%s(): handle_client() returned %d", __func__, error);
-        }
-    }
-
-    return 0;
-}
-
-*/

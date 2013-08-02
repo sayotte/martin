@@ -73,7 +73,7 @@ void init_logging()
 
         return;
 }
-
+/*
 pthread_mutex_t *setup_shared_mutex()
 {
     pthread_mutex_t     *mtx;
@@ -99,23 +99,19 @@ pthread_mutex_t *setup_shared_mutex()
 
     return mtx;
 }
-
-int setup_listen_socket(master_socket_t *ms)
+*/
+int setup_listen_socket(int *fd)
 {
     struct sockaddr_in  servaddr;
     int                 error;
     int                 port = 8080; /* statically defined! */
     int optval;
     
-    ms->mtx = setup_shared_mutex();
-    if(ms->mtx == NULL)
-        return 1;
-    
-    ms->fd = socket(AF_INET, SOCK_STREAM, 0);
-    if(ms->fd == -1)
+    *fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(*fd == -1)
     {
         syslog(LOG_CRIT, "%s(): Failed to allocate socket: %s\n", __func__, strerror(errno));
-        return 2;
+        return 1;
     }
 
     memset(&servaddr, 0, sizeof(servaddr));
@@ -124,39 +120,42 @@ int setup_listen_socket(master_socket_t *ms)
     servaddr.sin_port           = htons(port);
 
     optval = 1;
-    setsockopt(ms->fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int));
+    setsockopt(*fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int));
 
-    error = bind(ms->fd, (const struct sockaddr *)&servaddr, sizeof(servaddr));
+    error = bind(*fd, (const struct sockaddr *)&servaddr, sizeof(servaddr));
     if(error)
     {
         syslog(LOG_ERR, "%s(): Failed to bind to socket: %s\n", __func__, strerror(errno));
-        return 3;
+        return 2;
     }
     syslog(LOG_DEBUG, "%s(): Bound to socket", __func__);
 
-    error = listen(ms->fd, 1000);
+    error = listen(*fd, 1000);
     if(error)
     {
         syslog(LOG_CRIT, "%s(): Failed to listen on socket?!: %s\n", __func__, strerror(errno));
-        return 4;
+        return 3;
     }
     syslog(LOG_DEBUG, "%s(): Listening on socket", __func__);
 
     return 0;
 }
     
-
+/*
 #define fork_worker()\
   syslog(LOG_DEBUG, "%s(): Forking a worker process", __func__);\
   mypid = fork();\
   if(mypid == 0)\
     return(worker_loop(&ms));
+*/
 
 int start_server()
 {
-    master_socket_t     ms;
-    int                 error, status, i;
-    pid_t               mypid;
+    int                 listen;
+    int                 error;
+    int                 client; 
+    struct sockaddr     clientaddr;
+    socklen_t           clientaddr_len;
 
     init_logging();
 
@@ -167,11 +166,10 @@ int start_server()
         return 1;
     }
 
-    error = setup_listen_socket(&ms);
+    error = setup_listen_socket(&listen);
     if(error != 0)
         return 2;
-
-    /* Fork some workers */
+/*
     for(i=0; i < MAX_WORKERS; i++)
     {
         fork_worker();
@@ -194,10 +192,29 @@ int start_server()
             syslog(LOG_ERR, "%s(): waitpid() failed: %s", __func__, strerror(errno));
         }
     }
+*/
 
-    return 0;
+    clientaddr_len = sizeof(clientaddr);
+    while(1)
+    {
+        syslog(LOG_DEBUG, "%s(): accepting connection\n", __func__);
+        client = accept(listen, (struct sockaddr *)&clientaddr, &clientaddr_len);
+        if(client == -1)
+        {
+            syslog(LOG_ERR, "%s(): Failed to accept connection on socket: %s\n", __func__, strerror(errno));
+            return 3;
+        }
+        syslog(LOG_DEBUG, "%s(): accepted a connection", __func__);
+    
+        error = handle_client(client);
+        if(error)
+        {
+            syslog(LOG_DEBUG, "%s(): handle_client() returned %d", __func__, error);
+        }
+    }
 }
 
+/*
 int worker_loop(master_socket_t *ms)
 {
     int                 i, error;
@@ -234,3 +251,4 @@ int worker_loop(master_socket_t *ms)
     return 0;
 }
 
+*/

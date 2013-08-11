@@ -1,0 +1,5 @@
+GET /api/transactions/asdlfkjasdf?ok=blah HTTP/1.1
+User-Agent: curl/7.19.7 (universal-apple-darwin10.0) libcurl/7.19.7 OpenSSL/0.9.8x zlib/1.2.3
+Host: localhost:8080
+Accept: */*
+

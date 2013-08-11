@@ -105,11 +105,6 @@ int start_server()
     return 0;
 }
 
-typedef struct {
-    http_parser             *parser;
-    http_parser_settings    *parser_settings;
-} client_t;
-
 static void accept_cb(struct ev_loop *loop, ev_io *w, int revents)
 {
     int                 clientfd; 
@@ -191,7 +186,7 @@ static void clientread_cb(struct ev_loop *loop, ev_io *w, int revents)
     }
     else
     {
-        nparsed = http_parser_execute(c->parser, c->parser_settings, buf, recved);
+        nparsed = handle_read_data(c, buf, recved);
 
         if(nparsed != recved)
             ; /* FIXME do something here */

@@ -31,15 +31,20 @@ void describe_request(struct message *m)
             break;
     }
 
-    printf("Method: %s\n", method_name);
-    printf("URL: %s\n", m->request_url);
-    printf("Path: %s\n", m->request_path);
-    printf("Query-string: %s\n", m->query_string);
+    syslog(LOG_DEBUG, "Method: %s", method_name);
+    syslog(LOG_DEBUG, "URL: %s", m->request_url);
+    syslog(LOG_DEBUG, "Path: %s", m->request_path);
+    syslog(LOG_DEBUG, "Query-string: %s", m->query_string);
 
     for(i = 0; i < m->num_headers; i++)
     {
-        printf("Header[%d], Name->: '%s', Value: '%s'\n", i, m->headers[i][0], m->headers[i][1]);
+        syslog(LOG_DEBUG, "Header[%d], Name->: '%s', Value: '%s'", i, m->headers[i][0], m->headers[i][1]);
     }
+}
+
+int handle_read_data(client_t *c, char* buf, int len)
+{   
+    return http_parser_execute(c->parser, c->parser_settings, buf, len);
 }
 
 int on_message_begin(http_parser *parser)
@@ -58,7 +63,7 @@ int on_message_complete(http_parser *parser)
 {
     syslog(LOG_DEBUG, "%s()...", __func__);
 
-    puts("-------- response should be generated at this point ---------");
+    syslog(LOG_DEBUG, "-------- response should be generated at this point ---------");
 
     route_request((struct request *)parser->data);
 

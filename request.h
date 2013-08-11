@@ -2,6 +2,13 @@
 #define REQUEST_H
 #include "http_parser.h"
 
+typedef struct {
+    http_parser             *parser;
+    http_parser_settings    *parser_settings;
+} client_t;
+
+int handle_read_data(client_t *c, char* buf, int len);
+
 int on_message_begin(http_parser *parser);
 int on_message_complete(http_parser *parser);
 int on_url(http_parser *parser, const char *at, size_t len);

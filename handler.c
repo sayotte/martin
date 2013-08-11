@@ -1,11 +1,11 @@
-#include <sys/mman.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h> /* not needed when printf is removed */
-#include <stdlib.h>
-#include <string.h>
 #include <syslog.h>
+#include <string.h>
 #include <unistd.h>
+#include <stdio.h> /* not needed when printf is removed */
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <stdlib.h>
 #include "response.h"
 #include "request.h"
 #include "util.h"

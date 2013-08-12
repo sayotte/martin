@@ -91,6 +91,12 @@ int headers_parsed_correctly()
 
         bytes = handle_read_data(&c, buf, bytes);
 
+//        puts("");
+//        for(bytes = 0; bytes < req.msg.num_headers; bytes++)
+//        {   
+//            printf("Header[%d], Name->: '%s', Value: '%s'\n", bytes, req.msg.headers[bytes][0], req.msg.headers[bytes][1]);
+//        }
+
         if(strcmp(req.msg.headers[0][0], "User-Agent"))
             exit(1);
         if(strcmp(req.msg.headers[0][1], "curl/7.19.7 (universal-apple-darwin10.0) libcurl/7.19.7 OpenSSL/0.9.8x zlib/1.2.3"))

@@ -103,12 +103,12 @@ int on_header_field(http_parser *parser, const char *at, size_t len)
     req = parser->data;
     msg = &req->msg;
 
-    /* If we were last working on a value, we're in a new header now.
-       Otherwise, append to the one we've partially completed. */
+    /* If we were last working on a value, we're in a new header now. */
     if(msg->last_header_element == VALUE)
     {
         msg->num_headers++;
     }
+    /* Append to the header field-name; this might be a continuation due to a partial read */
     strncat(msg->headers[msg->num_headers][0], at, len);
     msg->last_header_element = FIELD;
 
@@ -149,6 +149,14 @@ int on_headers_complete(http_parser *parser)
     req = parser->data;
     msg = &req->msg;
     syslog(LOG_DEBUG, "%s()...", __func__);
+
+    /* The on_header_value() call cannot know when it has received the last bytes
+        of a header value, so it cannot increment the num_headers counter.
+        Now that we're here, we can increment it, but we only want to do that if
+        we've actually received at least one header! */
+    /** XXX Note: this counts on the message structure being initialized to zero! **/
+    if(msg->headers[0][0][0] != 0)
+        msg->num_headers++;
 
     /* Break down the url into the path and query-string */
     pathlen = strcspn(msg->request_url, "?");

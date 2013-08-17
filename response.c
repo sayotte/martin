@@ -67,8 +67,13 @@ void cleanup_response_preamble(preamble_t *h)
 void add_response_header(preamble_t *h, char* hdr)
 {
     char    *newhdr;
+    char    **hdrlist;
 
-    h->optional_headers = realloc(h->optional_headers, sizeof(char*) * h->num_headers + 1);
+    hdrlist = realloc(h->optional_headers, sizeof(char*) * h->num_headers + 1);
+    if(hdrlist)
+        h->optional_headers = hdrlist;
+    else
+        syslog(LOG_ERR, "%s(): realloc FAILED, we'll pretend we didn't notice though!", __func__);
 
     newhdr = malloc(strlen(hdr));
     strcpy(newhdr, hdr);

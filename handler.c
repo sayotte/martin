@@ -39,16 +39,16 @@ int get_all_transactions(int fd, struct message *m, char **splat, int splat_len)
 
 int get_transaction(int fd, struct message *m, char **splat, int splat_len)
 {
-    header_t    h;
+    preamble_t    h;
 
     syslog(LOG_DEBUG, "%s():...", __func__);
 
-    init_response_header(&h);
+    init_response_preamble(&h);
     add_response_header(&h, "Connection: close");
 
 /*    h.content_length = strlen(splat[1]) + 2;
 */
-    send_header(fd, &h);
+    send_preamble(fd, &h);
 
 /*    write(fd, splat[1], strlen(splat[1]));
     write(fd, "\r\n", 2);
@@ -57,14 +57,14 @@ int get_transaction(int fd, struct message *m, char **splat, int splat_len)
     send_response_chunk(fd, "\r\n", 2);
     end_response_chunks(fd);
 
-    cleanup_response_header(&h);
+    cleanup_response_preamble(&h);
 
     return 0;
 }
 
 int get_static(int fd, struct message *m, char **splat, int splat_len)
 {
-    header_t    h;
+    preamble_t    h;
     off_t       size;
     char        filename[1024];
     char        *response_buf;
@@ -73,7 +73,7 @@ int get_static(int fd, struct message *m, char **splat, int splat_len)
 
     syslog(LOG_DEBUG, "%s():...", __func__);
 
-    init_response_header(&h);
+    init_response_preamble(&h);
 
     snprintf(filename, 1024, "./static/%s", splat[1]);
     error = access(filename, R_OK);
@@ -90,7 +90,7 @@ int get_static(int fd, struct message *m, char **splat, int splat_len)
                 h.status_desc = "Forbidden";
                 h.content_length = size;
 
-                send_header(fd, &h);
+                send_preamble(fd, &h);
                 write(fd, response_buf, size);
                 free(response_buf);
 
@@ -105,7 +105,7 @@ int get_static(int fd, struct message *m, char **splat, int splat_len)
                 h.status_desc = "Not Found";
                 h.content_length = size;
 
-                send_header(fd, &h);
+                send_preamble(fd, &h);
                 write(fd, response_buf, size);
                 free(response_buf);
 
@@ -130,7 +130,7 @@ int get_static(int fd, struct message *m, char **splat, int splat_len)
         goto cleanup;
     }
     /*** FIXME add code to send smaller chunks here ***/
-    send_header(fd, &h);
+    send_preamble(fd, &h);
     send_response_chunk(fd, response_buf, size);
     end_response_chunks(fd);
     munmap(response_buf, size);
@@ -138,6 +138,6 @@ int get_static(int fd, struct message *m, char **splat, int splat_len)
 
     cleanup:
     close(fh);
-    cleanup_response_header(&h);
+    cleanup_response_preamble(&h);
     return error;   
 }

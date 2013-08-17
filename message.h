@@ -3,11 +3,12 @@
 
 #include "http_parser.h"
 
+#define MSG_ALLOC_UNIT  256
 #define MAX_ELEMENT_SIZE 2048
 #define MAX_HEADERS 64
 
 /* This structure definition modified from https://github.com/joyent/http-parser/blob/master/test.c */
-typedef struct messsage {
+typedef struct message {
 //  const char *name; /* for debugging purposes */
 //  const char *raw;
 //  enum http_parser_type type;
@@ -15,10 +16,12 @@ typedef struct messsage {
   const char *method_name;
   int status_code;
   int request_pathlen; 
-  char request_path[MAX_ELEMENT_SIZE];
-  char request_url[MAX_ELEMENT_SIZE];
-  char fragment[MAX_ELEMENT_SIZE];
-  char query_string[MAX_ELEMENT_SIZE];
+  char *request_path;
+  int request_urllen;
+  char *request_url;
+//  char fragment[MAX_ELEMENT_SIZE];
+  int query_stringlen;
+  char *query_string;
   char body[MAX_ELEMENT_SIZE];
 //  size_t body_size;
   const char *host;
@@ -44,6 +47,7 @@ typedef struct messsage {
 } message_t;
 
 void describe_message(message_t *m);
+int extend_message_url(message_t *m, const char *buf, int len);
 message_t *create_message();
 void destroy_message(message_t *m);
 

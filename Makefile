@@ -30,4 +30,5 @@ routes.c: routes.txt
 clean:
 	rm -f go
 	rm -f *.o
+	rm -f *.so
 	rm -f routes.c

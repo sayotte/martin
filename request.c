@@ -40,7 +40,7 @@ int on_url(http_parser *parser, const char *at, size_t len)
     msg = req->msg;
 
     /* Append to the growing URL; we'll break it down later */
-    strncat(&msg->request_url[0], at, len);
+    extend_message_url(msg, at, len);
 
     /* debugging stuff...*/
     strncpy(tok, at, len);
@@ -125,9 +125,17 @@ int on_headers_complete(http_parser *parser)
 
     /* Break down the url into the path and query-string */
     msg->request_pathlen = strcspn(msg->request_url, "?");
-    strncpy(msg->request_path, msg->request_url, msg->request_pathlen);
-    msg->request_path[msg->request_pathlen] = '\0';
-    strcpy(msg->query_string, &msg->request_url[msg->request_pathlen+1]);
+    if(msg->request_pathlen)
+    {
+        msg->request_path = malloc(msg->request_pathlen);
+        strncpy(msg->request_path, msg->request_url, msg->request_pathlen);
+    }
+    msg->query_stringlen = strlen(&msg->request_url[msg->request_pathlen+1]);
+    if(msg->query_stringlen)
+    {
+        msg->query_string = malloc(msg->query_stringlen);
+        strcpy(msg->query_string, &msg->request_url[msg->request_pathlen+1]);
+    }
 
     msg->method = parser->method;
     switch(parser->method)

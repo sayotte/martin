@@ -78,7 +78,7 @@ int on_url(http_parser *parser, const char *at, size_t len)
     req = parser->data;
 
     /* Append to the growing URL; we'll break it down later */
-    strncat(&req->msg.request_url, at, len);
+    strncat(&req->msg.request_url[0], at, len);
 
     /* debugging stuff...*/
     strncpy(tok, at, len);

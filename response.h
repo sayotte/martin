@@ -9,10 +9,10 @@ typedef struct response_preamble {
     int     num_headers;
 } preamble_t;
 
-void send_preamble(int client, preamble_t *h);
+int send_preamble(int client, preamble_t *h);
 void init_response_preamble(preamble_t *h);
 void cleanup_response_preamble(preamble_t *h);
 void add_response_header(preamble_t *h, char* hdr);
 
-void send_response_chunk(int client, char *buf, int size);
-void end_response_chunks(int client);
+int send_response_chunk(int client, char *buf, int size);
+int end_response_chunks(int client);

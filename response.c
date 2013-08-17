@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <errno.h>
 #include <stdio.h>
 #include <syslog.h>
 #include <unistd.h>
@@ -7,7 +8,7 @@
 #include "response.h"
 #include "util.h"
 
-#define MAX_HEADER_LENGTH 2048
+#define MAX_PREAMBLE_LENGTH 2048
 
 /*
 static char* r400_response = 
@@ -90,11 +91,11 @@ static char* response_template =
     "Content-type: %s\r\n" 
     "%s"; /* additional header fields go here, e.g. Cache-Control and Pragma */
 
-void send_preamble(int client, preamble_t *h)
+int send_preamble(int client, preamble_t *h)
 {
-    char    *header, *optional_buf;
+    char    *preamble, *optional_buf;
     char    length_buf[64];
-    int     i;
+    int     i, status;
 
     syslog(LOG_DEBUG, "%s(): ...", __func__);
 
@@ -111,7 +112,7 @@ void send_preamble(int client, preamble_t *h)
     /* Build the string of headers */
     if(h->num_headers)
     {
-        optional_buf = calloc(MAX_HEADER_LENGTH, sizeof(char));
+        optional_buf = calloc(MAX_PREAMBLE_LENGTH, sizeof(char));
         for(i=0; i < h->num_headers; i++)
         {
             strcat(optional_buf, h->optional_headers[i]);
@@ -123,23 +124,24 @@ void send_preamble(int client, preamble_t *h)
 
 
     /* Build the final header */
-    header = malloc(MAX_HEADER_LENGTH);
-    snprintf(header, MAX_HEADER_LENGTH, response_template, h->status, h->status_desc, h->content_type, optional_buf);
+    preamble = malloc(MAX_PREAMBLE_LENGTH);
+    snprintf(preamble , MAX_PREAMBLE_LENGTH, response_template, h->status, h->status_desc, h->content_type, optional_buf);
 
     /* Send the whole header */
-    write(client, header, strlen(header));
+    write_attempt(status, client, preamble, strlen(preamble));
 
     /* Clean up the heap */
     free(optional_buf);
-    free(header);
+    free(preamble);
 
-    return;
+    return 0;
 }
 
 
-void send_response_chunk(int client, char *buf, int size)
+int send_response_chunk(int client, char *buf, int size)
 {
     char    sizeline[64];
+    int     status;
 
     syslog(LOG_DEBUG, "%s():...", __func__);
     /*syslog(LOG_DEBUG, "%s(%d, %s, %d):...", __func__, client, buf, size);
@@ -147,18 +149,20 @@ void send_response_chunk(int client, char *buf, int size)
    
     /* Send the size header, e.g. "4\r\n" if we're about to send a 4-byte chunk */
     snprintf(sizeline, 64, "%X\r\n", size);
-    write(client, sizeline, strlen(sizeline));
+    write_attempt(status, client, sizeline, strlen(sizeline));
 
-    write(client, buf, size);
-    write(client, "\r\n", 2);
+    write_attempt(status, client, buf, size);
+    write_attempt(status, client, "\r\n", 2);
 
-    return;
+    return 0;
 }
 
-void end_response_chunks(int client)
+int end_response_chunks(int client)
 {
-    syslog(LOG_DEBUG, "%s():...", __func__);
-    write(client, "0\r\n\r\n", 5);
+    int     status;
 
-    return;
+    syslog(LOG_DEBUG, "%s():...", __func__);
+    write_attempt(status, client, "0\r\n\r\n", 5);
+
+    return 0;
 }

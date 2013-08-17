@@ -34,11 +34,11 @@ static char* r501_template =
 
 */
 
-void init_response_header(header_t *h)
+void init_response_preamble(preamble_t *h)
 {
     char    date[40];
 
-    memset(h, 0, sizeof(header_t));
+    memset(h, 0, sizeof(preamble_t));
     h->status = 200;
     h->status_desc = "OK";
     h->content_type = "text/plain";
@@ -51,7 +51,7 @@ void init_response_header(header_t *h)
     return;
 }
 
-void cleanup_response_header(header_t *h)
+void cleanup_response_preamble(preamble_t *h)
 {
     int     i;
 
@@ -64,7 +64,7 @@ void cleanup_response_header(header_t *h)
     return;
 }
 
-void add_response_header(header_t *h, char* hdr)
+void add_response_header(preamble_t *h, char* hdr)
 {
     char    *newhdr;
 
@@ -85,7 +85,7 @@ static char* response_template =
     "Content-type: %s\r\n" 
     "%s"; /* additional header fields go here, e.g. Cache-Control and Pragma */
 
-void send_header(int client, header_t *h)
+void send_preamble(int client, preamble_t *h)
 {
     char    *header, *optional_buf;
     char    length_buf[64];

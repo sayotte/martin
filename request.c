@@ -32,6 +32,7 @@ void describe_request(struct message *m)
     }
 
     syslog(LOG_DEBUG, "Method: %s", method_name);
+    syslog(LOG_DEBUG, "HTTP version: %hd.%hd", m->http_major, m->http_minor);
     syslog(LOG_DEBUG, "URL: %s", m->request_url);
     syslog(LOG_DEBUG, "Path: %s", m->request_path);
     syslog(LOG_DEBUG, "Query-string: %s", m->query_string);
@@ -157,6 +158,10 @@ int on_headers_complete(http_parser *parser)
     /** XXX Note: this counts on the message structure being initialized to zero! **/
     if(msg->headers[0][0][0] != 0)
         msg->num_headers++;
+
+    /* Store HTTP major/minor codes */
+    msg->http_major = parser->http_major;
+    msg->http_minor = parser->http_minor;
 
     /* Break down the url into the path and query-string */
     pathlen = strcspn(msg->request_url, "?");

@@ -41,12 +41,12 @@ int path_and_query_string_parsed_correctly()
 
         bytes = handle_read_data(&c, buf, bytes);
 
-//        printf("\nrequest_path: %s\n", req.msg.request_path);
-//        printf("query_string: %s\n", req.msg.query_string);
+//        printf("\nrequest_path: %s\n", req.msg->request_path);
+//        printf("query_string: %s\n", req.msg->query_string);
 
-        if(strcmp(req.msg.request_path, "/api/transactions/asdlfkjasdf"))
+        if(strcmp(req.msg->request_path, "/api/transactions/asdlfkjasdf"))
             exit(1);
-        if(strcmp(req.msg.query_string, "ok=blah"))
+        if(strcmp(req.msg->query_string, "ok=blah"))
             exit(2);
 
         exit(0);
@@ -67,9 +67,9 @@ int http_version_is_parsed_correctly()
         http_parser_init(c.parser, HTTP_REQUEST);
 
         bytes = handle_read_data(&c, buf, bytes);
-    //    printf("Major: %d\tMinor: %d\n", req.msg.http_major, req.msg.http_minor);
+    //    printf("Major: %d\tMinor: %d\n", req.msg->http_major, req.msg->http_minor);
 
-        if(req.msg.http_major == 1 && req.msg.http_minor == 1)
+        if(req.msg->http_major == 1 && req.msg->http_minor == 1)
             exit(0);
         else
             exit(1);
@@ -92,24 +92,24 @@ int headers_parsed_correctly()
         bytes = handle_read_data(&c, buf, bytes);
 
 //        puts("");
-//        for(bytes = 0; bytes < req.msg.num_headers; bytes++)
+//        for(bytes = 0; bytes < req.msg->num_headers; bytes++)
 //        {   
-//            printf("Header[%d], Name->: '%s', Value: '%s'\n", bytes, req.msg.headers[bytes][0], req.msg.headers[bytes][1]);
+//            printf("Header[%d], Name->: '%s', Value: '%s'\n", bytes, req.msg->headers[bytes][0], req.msg->headers[bytes][1]);
 //        }
 
-        if(strcmp(req.msg.headers[0][0], "User-Agent"))
+        if(strcmp(req.msg->headers[0][0], "User-Agent"))
             exit(1);
-        if(strcmp(req.msg.headers[0][1], "curl/7.19.7 (universal-apple-darwin10.0) libcurl/7.19.7 OpenSSL/0.9.8x zlib/1.2.3"))
+        if(strcmp(req.msg->headers[0][1], "curl/7.19.7 (universal-apple-darwin10.0) libcurl/7.19.7 OpenSSL/0.9.8x zlib/1.2.3"))
             exit(2);
-        if(strcmp(req.msg.headers[1][0], "Host"))
+        if(strcmp(req.msg->headers[1][0], "Host"))
             exit(3);
-        if(strcmp(req.msg.headers[1][1], "localhost:8080"))
+        if(strcmp(req.msg->headers[1][1], "localhost:8080"))
             exit(4);
-        if(strcmp(req.msg.headers[2][0], "Accept"))
+        if(strcmp(req.msg->headers[2][0], "Accept"))
             exit(5);
-        if(strcmp(req.msg.headers[2][1], "*/*"))
+        if(strcmp(req.msg->headers[2][1], "*/*"))
             exit(6);
-        if(req.msg.num_headers != 3)
+        if(req.msg->num_headers != 3)
             exit(7);
 
         exit(0);
@@ -135,7 +135,7 @@ int body_is_parsed_correctly()
 
         bytes = handle_read_data(&c, buf, bytes);
 
-        if(strcmp(req.msg.body, expected_body))
+        if(strcmp(req.msg->body, expected_body))
             exit(1);
 
         exit(0);
@@ -157,7 +157,7 @@ int method_is_parsed_correctly()
 
         bytes = handle_read_data(&c, buf, bytes);
 
-        if(req.msg.method == HTTP_GET)
+        if(req.msg->method == HTTP_GET)
             exit(0);
         else
             exit(1);
@@ -174,6 +174,7 @@ int main()
 
     c.parser = &parser;
     c.parser_settings = &settings;
+    req.msg = create_message();
     c.parser->data = &req;
 
     c.parser_settings->on_message_begin = on_message_begin;

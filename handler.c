@@ -13,7 +13,7 @@
 extern const char* r403_template;
 extern const char* r404_template;
 
-int put_transaction(int fd, struct message *m, char **splat, int splat_len)
+int put_transaction(int fd, message_t *m, char **splat, int splat_len)
 {
     int     i;
     syslog(LOG_DEBUG, "%s():...", __func__);
@@ -25,7 +25,7 @@ int put_transaction(int fd, struct message *m, char **splat, int splat_len)
     return 0;
 }
 
-int get_all_transactions(int fd, struct message *m, char **splat, int splat_len)
+int get_all_transactions(int fd, message_t *m, char **splat, int splat_len)
 {
     int     i;
     syslog(LOG_DEBUG, "%s():...", __func__);
@@ -37,7 +37,7 @@ int get_all_transactions(int fd, struct message *m, char **splat, int splat_len)
     return 0;
 }
 
-int get_transaction(int fd, struct message *m, char **splat, int splat_len)
+int get_transaction(int fd, message_t *m, char **splat, int splat_len)
 {
     preamble_t    h;
 
@@ -66,7 +66,7 @@ int get_transaction(int fd, struct message *m, char **splat, int splat_len)
     return 0;
 }
 
-int get_static(int fd, struct message *m, char **splat, int splat_len)
+int get_static(int fd, message_t *m, char **splat, int splat_len)
 {
     preamble_t    h;
     off_t       size;

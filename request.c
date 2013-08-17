@@ -3,45 +3,10 @@
 #include <syslog.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include "message.h"
 #include "request.h"
 #include "http_parser.h"
 #include "route.h"
-
-void describe_request(struct message *m)
-{
-    int     i;
-    char    *method_name;
-
-    switch(m->method)
-    {
-        case(HTTP_GET):
-            method_name = "GET";
-            break;
-        case(HTTP_PUT):
-            method_name = "PUT";
-            break;
-        case(HTTP_POST):
-            method_name = "POST";
-            break;
-        case(HTTP_DELETE):
-            method_name = "DELETE";
-            break;
-        default:
-            method_name = "UNSUPPORTED";
-            break;
-    }
-
-    syslog(LOG_DEBUG, "Method: %s", method_name);
-    syslog(LOG_DEBUG, "HTTP version: %hd.%hd", m->http_major, m->http_minor);
-    syslog(LOG_DEBUG, "URL: %s", m->request_url);
-    syslog(LOG_DEBUG, "Path: %s", m->request_path);
-    syslog(LOG_DEBUG, "Query-string: %s", m->query_string);
-
-    for(i = 0; i < m->num_headers; i++)
-    {
-        syslog(LOG_DEBUG, "Header[%d], Name->: '%s', Value: '%s'", i, m->headers[i][0], m->headers[i][1]);
-    }
-}
 
 int handle_read_data(client_t *c, char* buf, int len)
 {   
@@ -50,13 +15,7 @@ int handle_read_data(client_t *c, char* buf, int len)
 
 int on_message_begin(http_parser *parser)
 {
-    struct request  *req;
-    struct message  *msg;
-
-    req = parser->data;
-    msg = &req->msg;
     syslog(LOG_DEBUG, "%s()...", __func__);
-    memset(msg, 0, sizeof(struct message));
     return 0;
 }
 
@@ -75,11 +34,13 @@ int on_url(http_parser *parser, const char *at, size_t len)
 {
     char    tok[256];
     struct request  *req;
+    message_t       *msg;
 
     req = parser->data;
+    msg = req->msg;
 
     /* Append to the growing URL; we'll break it down later */
-    strncat(&req->msg.request_url[0], at, len);
+    strncat(&msg->request_url[0], at, len);
 
     /* debugging stuff...*/
     strncpy(tok, at, len);
@@ -99,10 +60,10 @@ int on_header_field(http_parser *parser, const char *at, size_t len)
 {
     char    tok[256];
     struct request  *req;
-    struct message  *msg;
+    message_t       *msg;
 
     req = parser->data;
-    msg = &req->msg;
+    msg = req->msg;
 
     /* If we were last working on a value, we're in a new header now. */
     if(msg->last_header_element == VALUE)
@@ -125,10 +86,10 @@ int on_header_value(http_parser *parser, const char *at, size_t len)
 {
     char    tok[256];
     struct request  *req;
-    struct message  *msg;
+    message_t       *msg;
 
     req = parser->data;
-    msg = &req->msg;
+    msg = req->msg;
 
     strncat(msg->headers[msg->num_headers][1], at, len);
     msg->last_header_element = VALUE;
@@ -143,12 +104,11 @@ int on_header_value(http_parser *parser, const char *at, size_t len)
 
 int on_headers_complete(http_parser *parser)
 {
-    int     pathlen;
     struct request  *req;
-    struct message  *msg;
+    message_t       *msg;
 
     req = parser->data;
-    msg = &req->msg;
+    msg = req->msg;
     syslog(LOG_DEBUG, "%s()...", __func__);
 
     /* The on_header_value() call cannot know when it has received the last bytes
@@ -164,14 +124,32 @@ int on_headers_complete(http_parser *parser)
     msg->http_minor = parser->http_minor;
 
     /* Break down the url into the path and query-string */
-    pathlen = strcspn(msg->request_url, "?");
-    strncpy(msg->request_path, msg->request_url, pathlen);
-    msg->request_path[pathlen] = '\0';
-    strcpy(msg->query_string, &msg->request_url[pathlen+1]);
+    msg->request_pathlen = strcspn(msg->request_url, "?");
+    strncpy(msg->request_path, msg->request_url, msg->request_pathlen);
+    msg->request_path[msg->request_pathlen] = '\0';
+    strcpy(msg->query_string, &msg->request_url[msg->request_pathlen+1]);
 
     msg->method = parser->method;
+    switch(parser->method)
+    {
+        case(HTTP_GET):
+            msg->method_name = "GET";
+            break;
+        case(HTTP_PUT):
+            msg->method_name = "PUT";
+            break;
+        case(HTTP_POST):
+            msg->method_name = "POST";
+            break;
+        case(HTTP_DELETE):
+            msg->method_name = "DELETE";
+            break;
+        default:
+            msg->method_name = "UNSUPPORTED";
+            break;
+    }
 
-    describe_request(msg);
+    describe_message(msg);
     return 0;
 }
 
@@ -180,7 +158,7 @@ int on_body(http_parser *parser, const char *at, size_t len)
     struct request  *req;
 
     req = parser->data;
-    strncat(req->msg.body, at, len);
+    strncat(req->msg->body, at, len);
 
     syslog(LOG_DEBUG, "%s():...", __func__);
     return 0;

@@ -12,16 +12,15 @@ int route_request(struct request *req)
     int         i;
     int         outputvec[MAX_OVECS];
     int         status;
-    int         pathlen;
     char        *splat[MAX_OVECS / 2];
     int         substring_len;
     int         splat_len;
     int         client;
-    struct message  *m;
-    int (*handler)(int, struct message*, char**, int);
+    message_t   *m;
+    int (*handler)(int, message_t*, char**, int);
     
     client = req->fd;
-    m = &req->msg;
+    m = req->msg;
 
     syslog(LOG_DEBUG, "%s():...", __func__);
 
@@ -30,7 +29,6 @@ int route_request(struct request *req)
     routes = GROUTES;
 
     /* Find a matching route, matching on the (method, request_path) tuple */
-    pathlen = strlen(m->request_path);
     for(i = 0; i < GNUM_ROUTES; i++)
     {
         if(m->method != routes[i].method)
@@ -39,7 +37,7 @@ int route_request(struct request *req)
         status = pcre_exec( routes[i].re,
                             NULL,
                             m->request_path,
-                            pathlen,
+                            m->request_pathlen,
                             0,
                             0,
                             outputvec,

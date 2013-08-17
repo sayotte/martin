@@ -6,7 +6,7 @@
 typedef struct route {
     enum http_method method;
     pcre    *re;
-    int (*handler)(int, struct message*, char**, int);
+    int (*handler)(int, message_t*, char**, int);
 } route_t;
 
 extern route_t  *GROUTES;

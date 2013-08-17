@@ -6,7 +6,7 @@ VPATH = ../ ../http-parser/
 all: request.pass
 request.pass : request-test
 	./request-test
-request-test: test.h request.o fake-syslog.o http_parser.o
+request-test: test.h request.o fake-syslog.o http_parser.o message.o
 clean :
 	rm -f *.o
 	rm -rf *.dSYM

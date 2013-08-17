@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include "http_parser.h"
 #include "ev.h"
+#include "message.h"
 #include "request.h"
 #include "route.h"
 #include "server.h"
@@ -128,6 +129,7 @@ static void accept_cb(struct ev_loop *loop, ev_io *w, int revents)
     c->parser = malloc(sizeof(http_parser));
     c->parser_settings = malloc(sizeof(http_parser_settings));
     req = malloc(sizeof(request_t));
+    req->msg = create_message();
     req->fd = clientfd;
     c->parser->data = req;
 
@@ -168,6 +170,7 @@ static void clientread_cb(struct ev_loop *loop, ev_io *w, int revents)
         ev_io_stop(loop, w);
         close(w->fd);
         free(w);
+        destroy_message(req->msg);
         free(c->parser->data);
         free(c->parser);
         free(c->parser_settings);
@@ -179,6 +182,7 @@ static void clientread_cb(struct ev_loop *loop, ev_io *w, int revents)
         ev_io_stop(loop, w);
         close(w->fd);
         free(w);
+        destroy_message(req->msg);
         free(c->parser->data);
         free(c->parser);
         free(c->parser_settings);

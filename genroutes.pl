@@ -23,7 +23,7 @@ EOT
 
 foreach(@lines){
     my @list = split(/\s+/);
-    print "int $list[2](int, struct message*, char **splat, int splat_len);\n";
+    print "int $list[2](int, message_t*, char **splat, int splat_len);\n";
 }
 print "\n";
 

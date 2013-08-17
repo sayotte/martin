@@ -166,7 +166,7 @@ int on_body(http_parser *parser, const char *at, size_t len)
     struct request  *req;
 
     req = parser->data;
-    strncat(req->msg->body, at, len);
+    extend_message_body(req->msg, at, len);
 
     syslog(LOG_DEBUG, "%s():...", __func__);
     return 0;

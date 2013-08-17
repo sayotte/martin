@@ -19,38 +19,50 @@ void describe_message(message_t *m)
     }
 }
 
-int extend_message_url(message_t *m, const char *buf, int len)
+int extend_string(char **dst, int *dstlen, const char *src, int srclen, int unitsize)
 {
     int     total_len;
     int     units_needed;
     int     units_allocated;
     char    *ptr;
 
-    units_allocated = m->request_urllen / MSG_ALLOC_UNIT;
-    if((m->request_urllen % MSG_ALLOC_UNIT) != 0)
+    units_allocated = *dstlen / unitsize;
+    if((*dstlen % unitsize) != 0)
         units_allocated++;
     
-    total_len = m->request_urllen + len;
-    units_needed = total_len / MSG_ALLOC_UNIT;
-    if((total_len % MSG_ALLOC_UNIT) != 0)
+    total_len = *dstlen + srclen;
+    units_needed = total_len / unitsize;
+    if((total_len % unitsize) != 0)
         units_needed++;
 
     if(units_needed > units_allocated)
     {
-        ptr = realloc(m->request_url, MSG_ALLOC_UNIT * units_needed);
+        ptr = realloc(*dst, unitsize * units_needed);
         if(!ptr)
         {
             syslog(LOG_ERR, "%s(): realloc FAILED, likely running out of heap!", __func__);
             return -1;
         }
         else
-            m->request_url = ptr;
+            *dst = ptr;
     }
 
-    strncat(m->request_url, buf, len);
-    m->request_urllen += len;
+    strncat(*dst, src, srclen);
+    *dstlen += srclen;
 
     return 0;
+}
+
+int extend_message_url(message_t *m, const char *buf, int len)
+{
+    syslog(LOG_DEBUG, "%s(): ...", __func__);
+    return(extend_string(&m->request_url, &m->request_urllen, buf, len, MSG_ALLOC_UNIT));
+}
+
+int extend_message_body(message_t *m, const char *buf, int len)
+{
+    syslog(LOG_DEBUG, "%s(): ...", __func__);
+    return(extend_string(&m->body, &m->bodylen, buf, len, MSG_ALLOC_UNIT));
 }
 
 message_t *create_message()
@@ -71,16 +83,12 @@ void destroy_message(message_t *m)
 
     if(m->request_urllen)
         free(m->request_url);
-    else
-        syslog(LOG_DEBUG, "%s(): not freeing m->request_url, because m->request_urllen is %d", __func__, m->request_urllen);
     if(m->request_pathlen)
         free(m->request_path);
-    else
-        syslog(LOG_DEBUG, "%s(): not freeing m->request_path, because m->request_pathlen is %d", __func__, m->request_pathlen);
     if(m->query_stringlen)
         free(m->query_string);
-    else
-        syslog(LOG_DEBUG, "%s(): not freeing m->query_string, because m->query_stringlen is %d", __func__, m->query_stringlen);
+    if(m->bodylen)
+        free(m->body);
 
     free(m);
 

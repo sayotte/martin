@@ -22,7 +22,8 @@ typedef struct message {
 //  char fragment[MAX_ELEMENT_SIZE];
   int query_stringlen;
   char *query_string;
-  char body[MAX_ELEMENT_SIZE];
+  int bodylen;
+  char *body;
 //  size_t body_size;
   const char *host;
 //  const char *userinfo;
@@ -47,7 +48,9 @@ typedef struct message {
 } message_t;
 
 void describe_message(message_t *m);
+int extend_string(char **dst, int *dstlen, const char *src, int srclen, int unitsize);
 int extend_message_url(message_t *m, const char *buf, int len);
+int extend_message_body(message_t *m, const char *buf, int len);
 message_t *create_message();
 void destroy_message(message_t *m);
 

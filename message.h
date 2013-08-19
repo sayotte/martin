@@ -44,14 +44,6 @@ typedef struct message {
 
     unsigned short http_major;
     unsigned short http_minor;
-
-/*
-    int message_begin_cb_called;
-    int headers_complete_cb_called;
-    int message_complete_cb_called;
-    int message_complete_on_eof;
-    int body_is_final;
-*/
 } message_t;
 
 void describe_message(message_t *m);

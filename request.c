@@ -66,12 +66,12 @@ int on_header_field(http_parser *parser, const char *at, size_t len)
     msg = req->msg;
 
     /* If we were last working on a value, we're in a new header now. */
-    if(msg->last_header_element == VALUE)
-    {
-        msg->num_headers++;
-    }
+    if(msg->last_header_element == VALUE || msg->last_header_element == NONE)
+        add_message_header(msg, at, len, NULL, 0);
     /* Append to the header field-name; this might be a continuation due to a partial read */
-    strncat(msg->headers[msg->num_headers][0], at, len);
+    else
+        extend_message_header_fieldname(msg, msg->num_headers - 1, at, len);
+
     msg->last_header_element = FIELD;
 
     /* debugging stuff...*/
@@ -91,7 +91,8 @@ int on_header_value(http_parser *parser, const char *at, size_t len)
     req = parser->data;
     msg = req->msg;
 
-    strncat(msg->headers[msg->num_headers][1], at, len);
+    extend_message_header_value(msg, msg->num_headers - 1, at, len);
+
     msg->last_header_element = VALUE;
 
     /* debugging stuff...*/
@@ -110,14 +111,6 @@ int on_headers_complete(http_parser *parser)
     req = parser->data;
     msg = req->msg;
     syslog(LOG_DEBUG, "%s()...", __func__);
-
-    /* The on_header_value() call cannot know when it has received the last bytes
-        of a header value, so it cannot increment the num_headers counter.
-        Now that we're here, we can increment it, but we only want to do that if
-        we've actually received at least one header! */
-    /** XXX Note: this counts on the message structure being initialized to zero! **/
-    if(msg->headers[0][0][0] != 0)
-        msg->num_headers++;
 
     /* Store HTTP major/minor codes */
     msg->http_major = parser->http_major;

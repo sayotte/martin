@@ -15,7 +15,7 @@ void describe_message(message_t *m)
 
     for(i = 0; i < m->num_headers; i++)
     {  
-        syslog(LOG_DEBUG, "Header[%d], Name->: '%s', Value: '%s'", i, m->headers[i][0], m->headers[i][1]);
+        syslog(LOG_DEBUG, "Header[%d], Name->: '%s', Value: '%s'", i, m->headers[i].name, m->headers[i].value);
     }
 }
 
@@ -56,13 +56,50 @@ int extend_string(char **dst, int *dstlen, const char *src, int srclen, int unit
 int extend_message_url(message_t *m, const char *buf, int len)
 {
     syslog(LOG_DEBUG, "%s(): ...", __func__);
-    return(extend_string(&m->request_url, &m->request_urllen, buf, len, MSG_ALLOC_UNIT));
+    return extend_string(&m->request_url, &m->request_urllen, buf, len, MSG_ALLOC_UNIT);
 }
 
 int extend_message_body(message_t *m, const char *buf, int len)
 {
     syslog(LOG_DEBUG, "%s(): ...", __func__);
-    return(extend_string(&m->body, &m->bodylen, buf, len, MSG_ALLOC_UNIT));
+    return extend_string(&m->body, &m->bodylen, buf, len, MSG_ALLOC_UNIT);
+}
+
+int extend_message_header_fieldname(message_t *m, int index, const char *buf, int len)
+{
+    syslog(LOG_DEBUG, "%s(): ...", __func__);
+    return extend_string(&m->headers[index].name, &m->headers[index].namelen, buf, len, MSG_ALLOC_UNIT);
+}
+
+int extend_message_header_value(message_t *m, int index, const char *buf, int len)
+{
+    syslog(LOG_DEBUG, "%s(): ...", __func__);
+    return extend_string(&m->headers[index].value, &m->headers[index].valuelen, buf, len, MSG_ALLOC_UNIT);
+}
+
+int add_message_header(message_t *m, const char *name, int namelen, const char *value, int valuelen)
+{
+    struct header   *p;
+    int             i;
+
+    p = realloc(m->headers, sizeof(struct header) * (m->num_headers + 1));
+    if(p == NULL)
+    {
+        syslog(LOG_CRIT, "%s(): realloc failed!", __func__);
+        return 1;
+    }
+    m->headers = p;
+    m->num_headers++;
+    i = m->num_headers - 1;
+    memset(&m->headers[i], 0, sizeof(struct header));
+
+    if(name != NULL)
+        extend_message_header_fieldname(m, i, name, namelen);
+
+    if(value != NULL)
+        extend_message_header_value(m, i, value, valuelen);
+
+    return 0;
 }
 
 message_t *create_message()
@@ -79,6 +116,8 @@ message_t *create_message()
 
 void destroy_message(message_t *m)
 {
+    int     i;
+
     syslog(LOG_DEBUG, "%s(): ...", __func__);
 
     if(m->request_urllen)
@@ -89,6 +128,15 @@ void destroy_message(message_t *m)
         free(m->query_string);
     if(m->bodylen)
         free(m->body);
+    for(i = 0; i < m->num_headers; i++)
+    {
+        if(m->headers[i].namelen)
+            free(m->headers[i].name);
+        if(m->headers[i].valuelen)
+            free(m->headers[i].value);
+    }
+    if(m->num_headers)
+        free(m->headers);
 
     free(m);
 

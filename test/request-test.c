@@ -97,17 +97,17 @@ int headers_parsed_correctly()
 //            printf("Header[%d], Name->: '%s', Value: '%s'\n", bytes, req.msg->headers[bytes][0], req.msg->headers[bytes][1]);
 //        }
 
-        if(strcmp(req.msg->headers[0][0], "User-Agent"))
+        if(strcmp(req.msg->headers[0].name, "User-Agent"))
             exit(1);
-        if(strcmp(req.msg->headers[0][1], "curl/7.19.7 (universal-apple-darwin10.0) libcurl/7.19.7 OpenSSL/0.9.8x zlib/1.2.3"))
+        if(strcmp(req.msg->headers[0].value, "curl/7.19.7 (universal-apple-darwin10.0) libcurl/7.19.7 OpenSSL/0.9.8x zlib/1.2.3"))
             exit(2);
-        if(strcmp(req.msg->headers[1][0], "Host"))
+        if(strcmp(req.msg->headers[1].name, "Host"))
             exit(3);
-        if(strcmp(req.msg->headers[1][1], "localhost:8080"))
+        if(strcmp(req.msg->headers[1].value, "localhost:8080"))
             exit(4);
-        if(strcmp(req.msg->headers[2][0], "Accept"))
+        if(strcmp(req.msg->headers[2].name, "Accept"))
             exit(5);
-        if(strcmp(req.msg->headers[2][1], "*/*"))
+        if(strcmp(req.msg->headers[2].value, "*/*"))
             exit(6);
         if(req.msg->num_headers != 3)
             exit(7);

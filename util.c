@@ -1,8 +1,10 @@
+#include <ctype.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include "http_parser.h"
 
 void gen_date_header(char* dest)
 {
@@ -29,4 +31,83 @@ off_t fsize(const char *filename) {
 
     return -1;
 }
- 
+
+int match_http_method(char  *string)
+{
+    char normal[16];
+    int i;
+
+    for(i=0; string[i] && i < 16; i++)
+        normal[i] = toupper(string[i]);
+    normal[i] = '\0';
+
+    if(!strcmp(normal, "DELETE"))
+        return HTTP_DELETE;
+    if(!strcmp(normal, "GET"))
+        return HTTP_GET;
+    if(!strcmp(normal, "HEAD"))
+        return HTTP_HEAD;
+    if(!strcmp(normal, "POST"))
+        return HTTP_POST;
+    if(!strcmp(normal, "PUT"))
+        return HTTP_PUT;
+    if(!strcmp(normal, "CONNECT"))
+        return HTTP_CONNECT;
+    if(!strcmp(normal, "OPTIONS"))
+        return HTTP_OPTIONS;
+    if(!strcmp(normal, "TRACE"))
+        return HTTP_TRACE;
+    if(!strcmp(normal, "COPY"))
+        return HTTP_COPY;
+    if(!strcmp(normal, "LOCK"))
+        return HTTP_LOCK;
+    if(!strcmp(normal, "MKCOL"))
+        return HTTP_MKCOL;
+    if(!strcmp(normal, "MOVE"))
+        return HTTP_MOVE;
+    if(!strcmp(normal, "PROPFIND"))
+        return HTTP_PROPFIND;
+    if(!strcmp(normal, "PROPPATCH"))
+        return HTTP_PROPPATCH;
+    if(!strcmp(normal, "SEARCH"))
+        return HTTP_SEARCH;
+    if(!strcmp(normal, "UNLOCK"))
+        return HTTP_UNLOCK;
+    if(!strcmp(normal, "REPORT"))
+        return HTTP_REPORT;
+    if(!strcmp(normal, "MKACTIVITY"))
+        return HTTP_MKACTIVITY;
+    if(!strcmp(normal, "CHECKOUT"))
+        return HTTP_CHECKOUT;
+    if(!strcmp(normal, "MERGE"))
+        return HTTP_MERGE;
+    if(!strcmp(normal, "M-SEARCH"))
+        return HTTP_MSEARCH;
+    if(!strcmp(normal, "NOTIFY"))
+        return HTTP_NOTIFY;
+    if(!strcmp(normal, "SUBSCRIBE"))
+        return HTTP_SUBSCRIBE;
+    if(!strcmp(normal, "UNSUBSCRIBE"))
+        return HTTP_UNSUBSCRIBE;
+    if(!strcmp(normal, "PATCH"))
+        return HTTP_PATCH;
+    if(!strcmp(normal, "PURGE"))
+        return HTTP_PURGE;
+
+    return -1;
+}
+
+int chomp(char *str)
+{
+    if (!str || !*str)
+        return 0;
+
+    while(str[1])
+        ++str;
+
+    if (*str!='\n')
+        return 0;
+
+    *str = '\0';
+    return '\n';
+}

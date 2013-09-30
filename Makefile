@@ -14,7 +14,7 @@ SO_SUFFIX = .dylib
 #SO_SUFFIX = .so
 
 LIBS = $(HTTP_PARSER_PATH)/http_parser.o $(PCRE_PATH)/lib/libpcre$(SO_SUFFIX) -lm $(EV_PATH)/lib/libev$(SO_SUFFIX)
-OBJS = message.o server.o request.o templates.o handler.o route.o response.o util.o
+OBJS = message.o server.o request.o templates.o builtin.o route.o response.o util.o
 
 go: martin.so main.o 
 	gcc -o go $(LDFLAGS) main.o martin.so $(LIBS)

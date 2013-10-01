@@ -12,6 +12,7 @@
 #include "http_parser.h"
 #include "ev.h"
 #include "message.h"
+#include "plugin.h"
 #include "request.h"
 #include "route.h"
 #include "server.h"
@@ -81,6 +82,8 @@ int start_server()
     struct ev_loop  *loop;
 
     init_logging();
+
+    load_plugins_dir("./plugins");
 
     error = setup_routes();
     if(error != 0)

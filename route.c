@@ -4,6 +4,7 @@
 #include <syslog.h>
 #include <string.h>
 #include "pcre.h"
+#include "plugin.h"
 #include "route.h"
 #include "request.h"
 #include "util.h"
@@ -94,7 +95,7 @@ int parse_routes(const char *filename, route_t ***routelist, int *numroutes)
 
 int parse_routeline(char* line, route_t **route)
 {
-    int         status, matches;
+    int         status, matches, i;
     pcre        *test_re, *route_re;
     char        *pattern;
     const char  *errmsg;
@@ -155,10 +156,21 @@ int parse_routeline(char* line, route_t **route)
         return 3;
 
     /* Resolve the handler-symbol into a function pointer */
+    /* First search linked-in symbols */
     FUNC = dlsym(RTLD_SELF, handler);
+    if(FUNC != NULL)
+        syslog(LOG_DEBUG, "%s(): Found symbol '%s' in builtins", __func__, handler, i);
+    /* Next search among loaded plugins */
+    for(i = 0; i < NUMPLUGINS && FUNC == NULL; i++)
+    {
+        FUNC = dlsym(PLUGINS[i], handler);
+        if(FUNC != NULL)
+            syslog(LOG_DEBUG, "%s(): Found symbol '%s' in plugin #%d'", __func__, handler, i);
+    }
+    /* Finally, fail if it remains unfound */
     if(FUNC == NULL)
     {
-        syslog(LOG_WARNING, "%s(): dlsym returned error: '%s'", __func__, dlerror());
+        syslog(LOG_WARNING, "%s(): Failed to find symbol '%s' in builtins or plugins", __func__, handler);
         return 4;
     }
 

@@ -1,9 +1,10 @@
 CC = gcc
-CPPFLAGS = -I../ -I../http-parser/ -I../pcre/include/
+CPPFLAGS = -I../ -I../@http_parser_path@/ -I../@pcre_path@/include/
 CFLAGS = -ggdb -Wall -Wextra -Werror -std=gnu99 
-VPATH = ../ ../http-parser/ ../pcre/lib/
+VPATH = ../ ../@http_parser_path@/ ../@libev_path@/lib/
+SO_SUFFIX = @so_suffix@
 
-all: request.pass message.pass route.pass plugin.pass
+all: request.pass message.pass route.pass plugin.pass config.h
 request.pass : request-test
 	./request-test
 request-test: test.h request.o fake-syslog.o http_parser.o message.o
@@ -15,11 +16,11 @@ route.pass: route-test
 route-test: test.h route.o fake-syslog.o libpcre.a util.o plugin.o
 plugin.pass: plugin-test
 	./plugin-test
-plugin-test: test.h plugin.o libpcre.a | badplugin.so goodplugin1.so goodplugin2.so
-%.so: %.c
+plugin-test: test.h plugin.o libpcre.a | badplugin$(SO_SUFFIX) goodplugin1$(SO_SUFFIX) goodplugin2$(SO_SUFFIX)
+%$(SO_SUFFIX): %.c
 	gcc -shared -o $@ $*.c
-badplugin.so: 
-	touch badplugin.so
+badplugin$(SO_SUFFIX): 
+	touch badplugin$(SO_SUFFIX)
 clean :
 	rm -f *.o
 	rm -f *.so

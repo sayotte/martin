@@ -1,0 +1,3 @@
+#define HAVE_MALLOC_SIZE @have_malloc_size@
+#define HAVE_MALLOC_USABLE_SIZE @have_malloc_usable_size@
+#define SO_SUFFIX "@so_suffix@"

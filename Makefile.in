@@ -27,3 +27,13 @@ clean:
 	rm -f *.o
 	rm -f *$(SO_SUFFIX)
 	rm -f routes.c
+
+distclean: clean
+	rm Makefile
+	rm test/Makefile
+	rm -rf autom4te.cache
+	rm config.h
+	rm config.log
+	rm config.status
+	rm configure
+

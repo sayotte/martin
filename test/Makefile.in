@@ -1,7 +1,7 @@
 CC = gcc
 CPPFLAGS = -I../ -I../@http_parser_path@/ -I../@pcre_path@/include/
 CFLAGS = -ggdb -Wall -Wextra -Werror -std=gnu99 
-VPATH = ../ ../@http_parser_path@/ ../@libev_path@/lib/
+VPATH = ../ ../@http_parser_path@/ ../@libev_path@/lib/ ../@pcre_path@/lib/
 SO_SUFFIX = @so_suffix@
 
 all: request.pass message.pass route.pass plugin.pass config.h

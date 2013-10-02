@@ -23,7 +23,7 @@ badplugin$(SO_SUFFIX):
 	touch badplugin$(SO_SUFFIX)
 clean :
 	rm -f *.o
-	rm -f *.so
+	rm -f *$(SO_SUFFIX)
 	rm -rf *.dSYM
 	rm -f *.pass
 	rm -f *-test

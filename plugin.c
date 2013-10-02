@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <syslog.h>
+#include "config.h"
 #include "pcre.h"
 #include "plugin.h"
 
@@ -29,7 +30,7 @@ int load_plugins_dir(char *plugin_path)
         return 1;
     }
 
-    pattern = "^[\\w\\.]+\\.so$";
+    pattern = "^[\\w\\.]+" SO_SUFFIX "$";
     re = pcre_compile(  pattern,
                         0,
                         &errmsg,

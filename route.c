@@ -62,7 +62,7 @@ int parse_routes(const char *filename, route_t ***routelist, int *numroutes)
         {
             syslog(LOG_ALERT, "%s(): reallocf() failed prepping to parse line #%d", __func__, linenum);
             retcode = 2;
-            goto end;
+            goto end1;
         }
         routes = tmp;
         status = parse_routeline(line, &routes[linenum]);
@@ -82,16 +82,17 @@ int parse_routes(const char *filename, route_t ***routelist, int *numroutes)
     {
         syslog(LOG_WARNING, "%s(): fgets() encountered an error (not EOF)", __func__);
         retcode = 3;
-        goto end;
+        goto end1;
     }
 
     *routelist = routes;
     *numroutes = linenum;
     retcode = 0;
 
+    end1:
+        fclose(input);
     end:
         free(line);
-        fclose(input);
         return retcode;
 }
 

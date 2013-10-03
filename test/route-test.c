@@ -191,7 +191,8 @@ int good_route_file_parses_correctly()
     if(!routefile)
     {
         printf("%s(): couldn't open tempfile '%s' for writing, aborting test!\n", __func__, routefile_path);
-        return -1;
+        status = -1;
+        goto cleanup;
     }
     fwrite(goodline, strlen(goodline), 1, routefile);
     fclose(routefile);
@@ -199,8 +200,9 @@ int good_route_file_parses_correctly()
     FUNC = dlsym(RTLD_DEFAULT, "dummy_routine");
     if(FUNC == NULL)
     {
-        printf("%s(): couldn't resolve symbol 'dummy_routine', aborting test!\n", __func__);
-        return -1;
+        printf("%s(): couldn't resolve symbol 'dummy_routine', aborting test!: %s\n", __func__, dlerror());
+        status = -1;
+        goto cleanup;
     }
 
     fork_and_get_exitcode(status,
@@ -232,8 +234,9 @@ int good_route_file_parses_correctly()
         exit(0);
     )
 
-    unlink(routefile_path);
-    free(routefile_path);
+    cleanup:
+        unlink(routefile_path);
+        free(routefile_path);
 
     return status;
 }

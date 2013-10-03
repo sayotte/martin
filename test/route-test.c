@@ -256,6 +256,6 @@ int main()
     printf("\n[route-test] Total tests passed/run: %d/%d\n", count - fail, count);
     puts("------------------------------------------------------------\n");
 
-    return 0;
+    return fail;
 }
 

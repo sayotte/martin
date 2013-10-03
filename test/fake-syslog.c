@@ -2,11 +2,9 @@
 
 void syslog(int priority, const char *message, ...)
 {
-    int shutup;
-    const char *shutup2;
+    priority++;
+    message++;
 
-    shutup = priority;
-    shutup2 = message;
     return;
 }
 

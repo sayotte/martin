@@ -22,6 +22,7 @@ int route_request(struct request *req)
 {
     void    *shutup;
     shutup = req;
+    shutup++;
 
     return 0;
 }

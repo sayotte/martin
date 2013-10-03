@@ -40,6 +40,7 @@ int parse_routes(const char *filename, route_t ***routelist, int *numroutes)
     int     retcode;
     route_t **routes;
     route_t *route;
+    void    *tmp;
 
     line = malloc(1024);
 
@@ -56,13 +57,14 @@ int parse_routes(const char *filename, route_t ***routelist, int *numroutes)
     while(fgets(line, 1024, input))
     {
         chomp(line);
-        routes = reallocf(routes, sizeof(route_t*) * (linenum + 1));
-        if(routes == NULL)
+        tmp = realloc(routes, sizeof(route_t*) * (linenum + 1));
+        if(tmp == NULL)
         {
-            syslog(LOG_ERR, "%s(): reallocf() failed prepping to parse line #%d", __func__, linenum);
+            syslog(LOG_ALERT, "%s(): reallocf() failed prepping to parse line #%d", __func__, linenum);
             retcode = 2;
             goto end;
         }
+        routes = tmp;
         status = parse_routeline(line, &routes[linenum]);
         if(status)
         {
@@ -157,9 +159,14 @@ int parse_routeline(char* line, route_t **route)
 
     /* Resolve the handler-symbol into a function pointer */
     /* First search linked-in symbols */
-    FUNC = dlsym(RTLD_SELF, handler);
+    #ifdef RTLD_SELF
+        FUNC = dlsym(RTLD_SELF, handler);
+    #else
+        #warning Using RTLD_DEFAULT
+        FUNC = dlsym(RTLD_DEFAULT, handler);
+    #endif
     if(FUNC != NULL)
-        syslog(LOG_DEBUG, "%s(): Found symbol '%s' in builtins", __func__, handler, i);
+        syslog(LOG_DEBUG, "%s(): Found symbol '%s' in builtins", __func__, handler);
     /* Next search among loaded plugins */
     for(i = 0; i < NUMPLUGINS && FUNC == NULL; i++)
     {

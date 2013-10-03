@@ -1,10 +1,15 @@
 CC = gcc
 CPPFLAGS = -I../ -I../@http_parser_path@/ -I../@pcre_path@/include/
-CFLAGS = -ggdb -Wall -Wextra -Werror -std=gnu99 
+CFLAGS = -ggdb -Wall -Wextra -Werror -std=gnu99 -D_GNU_SOURCE
 VPATH = ../ ../@http_parser_path@/ ../@libev_path@/lib/ ../@pcre_path@/lib/
+LIBS = @libdl@
 SO_SUFFIX = @so_suffix@
 
 all: request.pass message.pass route.pass plugin.pass config.h
+
+%: %.c
+	gcc -o $@ $(CPPFLAGS) $(CFLAGS) $^ $(LIBS)
+
 request.pass : request-test
 	./request-test
 request-test: test.h request.o fake-syslog.o http_parser.o message.o

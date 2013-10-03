@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "config.h"
 #include "plugin.h"
 #include "test.h"
 
@@ -23,7 +24,7 @@ int bad_plugin_returns_1()
 {
     int     status;
     fork_to_test(
-        status = load_plugin("./plugins/badplugin.so");
+        status = load_plugin("badplugin" SO_SUFFIX);
         if(status != 1)
         {
             printf("%s(): load_plugin returned %d\n", __func__, status);

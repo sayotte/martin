@@ -6,9 +6,11 @@
 #include "test.h"
 #include "message.h"
 
-#define MAC_OS_X
-#ifdef MAC_OS_X
+#ifdef HAVE_MALLOC_SIZE
 #include <malloc/malloc.h> /* malloc_size() on Mac */
+#else
+#include <malloc.h> /* malloc_usable_size() on Linux */
+#endif
 int extend_string_allocates_unitsize_blocks()
 {
     char    *dst;
@@ -16,8 +18,13 @@ int extend_string_allocates_unitsize_blocks()
     int     dstlen;
     int     unitsize, before, after;
 
-
-    unitsize = malloc_good_size(1);
+    #ifdef HAVE_MALLOC_SIZE
+        unitsize = malloc_good_size(1);
+    #else
+        src = malloc(1);
+        unitsize = malloc_usable_size(src);
+        free(src);
+    #endif
     dst = malloc(unitsize);
     memset(dst, 'a', unitsize);
     dst[unitsize - 1] = '\0';
@@ -28,9 +35,15 @@ int extend_string_allocates_unitsize_blocks()
     src[(unitsize * 2) - 1] = '\0';
 
     fork_to_test(
-        before = malloc_size(dst);
-        extend_string(&dst, &dstlen, src, strlen(src), unitsize);
-        after = malloc_size(dst);
+        #ifdef HAVE_MALLOC_SIZE
+            before = malloc_size(dst);
+            extend_string(&dst, &dstlen, src, strlen(src), unitsize);
+            after = malloc_size(dst);
+        #else
+            before = malloc_usable_size(dst);
+            extend_string(&dst, &dstlen, src, strlen(src), unitsize);
+            after = malloc_usable_size(dst);
+        #endif
 //        printf("\nunitsize: %d\tbefore: %d\tafter: %d\n", unitsize, before, after);
 //        puts(dst);
         if(after <= before)
@@ -40,7 +53,6 @@ int extend_string_allocates_unitsize_blocks()
         exit(0);
     )
 }
-#endif
 
 int extend_string_allocates_memory_given_null_ptr()
 {

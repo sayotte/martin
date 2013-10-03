@@ -26,7 +26,7 @@ AC_FUNC_FORK
 #AC_CHECK_FUNCS([malloc_size malloc_usable_size reallocf])
 AC_CHECK_FUNCS(malloc_size, [AC_SUBST(have_malloc_size, 1)], [AC_SUBST(have_malloc_size, 0)])
 AC_CHECK_FUNCS(malloc_usable_size, [AC_SUBST(have_malloc_usable_size, 1)], [AC_SUBST(have_malloc_usable_size, 0)])
-AC_SEARCH_LIBS([dlsym], [dl])
+AC_SEARCH_LIBS([dlsym], [dl], [AC_SUBST(libdl, -ldl)]) 
 
 AC_MSG_CHECKING([what extension is used for shared objects])
 if test "`uname -s`" == "Darwin"; then

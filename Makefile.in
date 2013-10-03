@@ -4,12 +4,12 @@ EV_PATH = @libev_path@
 
 CC = gcc
 CFLAGS = --std=gnu99 -ggdb -Wall -fPIC
-CPPFLAGS = -I$(HTTP_PARSER_PATH)/ -I$(PCRE_PATH)/include -I$(EV_PATH)/include
+CPPFLAGS = -I$(HTTP_PARSER_PATH)/ -I$(PCRE_PATH)/include -I$(EV_PATH)/include -D_GNU_SOURCE
 
 LDFLAGS = -Wl,-rpath $(PCRE_PATH)/lib/ -Wl,-rpath $(EV_PATH)/lib/ -Wl,-rpath .
 SO_SUFFIX = @so_suffix@
 
-LIBS = $(HTTP_PARSER_PATH)/http_parser.o $(PCRE_PATH)/lib/libpcre$(SO_SUFFIX) $(EV_PATH)/lib/libev$(SO_SUFFIX)
+LIBS = $(HTTP_PARSER_PATH)/http_parser.o $(PCRE_PATH)/lib/libpcre$(SO_SUFFIX) $(EV_PATH)/lib/libev$(SO_SUFFIX) @libdl@
 OBJS = message.o server.o request.o templates.o builtin.o plugin.o route.o response.o util.o
 
 go: martin$(SO_SUFFIX) main.o 

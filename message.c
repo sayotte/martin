@@ -26,28 +26,43 @@ int extend_string(char **dst, int *dstlen, const char *src, int srclen, int unit
     int     units_allocated;
     char    *ptr;
 
-    units_allocated = *dstlen / unitsize;
-    if((*dstlen % unitsize) != 0)
-        units_allocated++;
-    
     total_len = *dstlen + srclen;
     units_needed = total_len / unitsize;
     if((total_len % unitsize) != 0)
         units_needed++;
 
-    if(units_needed > units_allocated)
+    if(*dstlen)
     {
-        ptr = realloc(*dst, unitsize * units_needed);
+        units_allocated = *dstlen / unitsize;
+        if((*dstlen % unitsize) != 0)
+            units_allocated++;
+        
+        if(units_needed > units_allocated)
+        {
+            ptr = realloc(*dst, unitsize * units_needed);
+            if(!ptr)
+            {
+                syslog(LOG_ALERT, "%s(): realloc FAILED, likely running out of heap!", __func__);
+                return -1;
+            }
+            else
+                *dst = ptr;
+        }
+        strncat(*dst, src, srclen);
+    }
+    else
+    {
+        ptr = malloc(unitsize * units_needed);
         if(!ptr)
         {
-            syslog(LOG_ERR, "%s(): realloc FAILED, likely running out of heap!", __func__);
+            syslog(LOG_ALERT, "%s(): malloc FAILED, likely running out of heap!", __func__);
             return -1;
         }
-        else
-            *dst = ptr;
+        strncpy(ptr, src, srclen);
+        ptr[srclen] = '\0';
+        *dst = ptr;
     }
 
-    strncat(*dst, src, srclen);
     *dstlen += srclen;
 
     return 0;

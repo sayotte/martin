@@ -52,18 +52,26 @@ int happy_path()
             printf("%s(): wrong number of plugins found (%d)\n", __func__, NUMPLUGINS);
             exit(2);
         }
-    
-        DL = dlsym(PLUGINS[0], "ok");
+ 
+        #ifndef RTLD_SELF
+            DL = dlsym(RTLD_DEFAULT, "ok");
+        #else   
+            DL = dlsym(PLUGINS[0], "ok");
+        #endif
         if(DL == NULL)
         {
             printf("%s(): dlsym() failed to find symbol 'ok': %s\n", __func__, dlerror());
             exit(3);
         }
-    
-        DL = dlsym(PLUGINS[1], "notok");
+
+        #ifndef RTLD_SELF
+            DL = dlsym(RTLD_DEFAULT, "notok");
+        #else   
+            DL = dlsym(PLUGINS[0], "notok");
+        #endif
         if(DL == NULL)
         {
-            printf("%s(): dlsym() failed to find symbol 'notok': %s\n", __func__, dlerror());
+            printf("\n%s(): dlsym() failed to find symbol 'notok': %s\n", __func__, dlerror());
             exit(4);
         }
     

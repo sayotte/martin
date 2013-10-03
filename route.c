@@ -98,7 +98,7 @@ int parse_routes(const char *filename, route_t ***routelist, int *numroutes)
 
 int parse_routeline(char* line, route_t **route)
 {
-    int         status, matches, i;
+    int         status, matches;
     pcre        *test_re, *route_re;
     char        *pattern;
     const char  *errmsg;
@@ -108,6 +108,7 @@ int parse_routeline(char* line, route_t **route)
     char        method[16], path[256], handler[256];
     int         method_code;
     route_t     *myroute;
+    Dl_info info;
 
     /* Build the pattern we use to extract fields from the line */
     pattern = "^(\\w+)\\s+(\\S+)\\s+(\\S+)";
@@ -159,22 +160,29 @@ int parse_routeline(char* line, route_t **route)
         return 3;
 
     /* Resolve the handler-symbol into a function pointer */
-    /* First search linked-in symbols */
     #ifdef RTLD_SELF
+        /* Darwin's dlsym() searches all shared objects that were linked to the executable,
+           but NOT those that have been linked with dlopen() */
+        /* First search linked-in symbols */
         FUNC = dlsym(RTLD_SELF, handler);
-    #else
-        #warning Using RTLD_DEFAULT
-        FUNC = dlsym(RTLD_DEFAULT, handler);
-    #endif
-    if(FUNC != NULL)
-        syslog(LOG_DEBUG, "%s(): Found symbol '%s' in builtins", __func__, handler);
-    /* Next search among loaded plugins */
-    for(i = 0; i < NUMPLUGINS && FUNC == NULL; i++)
-    {
-        FUNC = dlsym(PLUGINS[i], handler);
         if(FUNC != NULL)
-            syslog(LOG_DEBUG, "%s(): Found symbol '%s' in plugin #%d'", __func__, handler, i);
-    }
+            syslog(LOG_DEBUG, "%s(): Found symbol '%s' in builtins", __func__, handler);
+        /* Next search among loaded plugins */
+        for(int i = 0; i < NUMPLUGINS && FUNC == NULL; i++)
+        {
+            FUNC = dlsym(PLUGINS[i], handler);
+            if(FUNC != NULL)
+                syslog(LOG_DEBUG, "%s(): Found symbol '%s' in plugin #%d'", __func__, handler, i);
+        }
+    #else
+        /* Linux's dlsym() searches all loaded libraries for us */
+        FUNC = dlsym(RTLD_DEFAULT, handler);
+        if(FUNC != NULL)
+        {
+            dladdr(FUNC, &info);
+            syslog(LOG_DEBUG, "%s(): Found symbol '%s' in module '%s'", __func__, handler, info.dli_fname);
+        }
+    #endif
     /* Finally, fail if it remains unfound */
     if(FUNC == NULL)
     {

@@ -5,12 +5,8 @@
 #include <assert.h>
 #include "test.h"
 #include "message.h"
+#include "config.h"
 
-#ifdef HAVE_MALLOC_SIZE
-#include <malloc/malloc.h> /* malloc_size() on Mac */
-#else
-#include <malloc.h> /* malloc_usable_size() on Linux */
-#endif
 int extend_string_allocates_unitsize_blocks()
 {
     char    *dst;
@@ -18,9 +14,9 @@ int extend_string_allocates_unitsize_blocks()
     int     dstlen;
     int     unitsize, before, after;
 
-    #ifdef HAVE_MALLOC_SIZE
+    #ifdef HAVE_MALLOC_GOOD_SIZE
         unitsize = malloc_good_size(1);
-    #else
+    #elif HAVE_MALLOC_USABLE_SIZE == 1
         src = malloc(1);
         unitsize = malloc_usable_size(src);
         free(src);
@@ -35,11 +31,11 @@ int extend_string_allocates_unitsize_blocks()
     src[(unitsize * 2) - 1] = '\0';
 
     fork_to_test(
-        #ifdef HAVE_MALLOC_SIZE
+        #ifdef HAVE_MALLOC_GOOD_SIZE
             before = malloc_size(dst);
             extend_string(&dst, &dstlen, src, strlen(src), unitsize);
             after = malloc_size(dst);
-        #else
+        #elif HAVE_MALLOC_USABLE_SIZE == 1
             before = malloc_usable_size(dst);
             extend_string(&dst, &dstlen, src, strlen(src), unitsize);
             after = malloc_usable_size(dst);

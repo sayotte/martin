@@ -17,6 +17,17 @@ AC_LANG(C)
 
 # Checks for header files.
 AC_CHECK_HEADERS([limits.h string.h inttypes.h wait.h sys/wait.h])
+AC_CHECK_HEADER(malloc.h, [have_malloc_h=1], [have_malloc_h=0])
+AC_CHECK_HEADER(malloc/malloc.h, [have_malloc_malloc_h=1], [have_malloc_malloc_h=0])
+if test "$have_malloc" == "1"; then
+    AC_SUBST(malloc_header, ["#include <malloc.h>"])
+else 
+    if test "$have_malloc_malloc_h" == "1"; then
+        AC_SUBST(malloc_header, ["#include <malloc/malloc.h>"])
+    else
+        AC_MSG_FAILURE([No malloc.h variant found!])
+    fi
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_UINT32_T
@@ -35,6 +46,7 @@ if test "`uname -s`" == "Darwin"; then
 else
     AC_MSG_RESULT([.so])
     AC_SUBST(so_suffix, .so)
+    AC_SUBST(export_dynamic, [-Wl,-export_dymamic])
 fi
 AC_SUBST(http_parser_path, $http_parser_path)
 AC_SUBST(pcre_path, $pcre_path)

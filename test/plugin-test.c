@@ -67,7 +67,7 @@ int happy_path()
         #ifndef RTLD_SELF
             DL = dlsym(RTLD_DEFAULT, "notok");
         #else   
-            DL = dlsym(PLUGINS[0], "notok");
+            DL = dlsym(PLUGINS[1], "notok");
         #endif
         if(DL == NULL)
         {

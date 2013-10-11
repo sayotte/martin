@@ -30,6 +30,7 @@ clean:
 
 distclean: clean
 	rm Makefile
+	(cd test; make clean)
 	rm test/Makefile
 	rm -rf autom4te.cache
 	rm config.h

@@ -14,12 +14,14 @@ int extend_string_allocates_unitsize_blocks()
     int     dstlen;
     int     unitsize, before, after;
 
-    #ifdef HAVE_MALLOC_GOOD_SIZE
+    #if HAVE_MALLOC_GOOD_SIZE == 1
         unitsize = malloc_good_size(1);
     #elif HAVE_MALLOC_USABLE_SIZE == 1
         src = malloc(1);
         unitsize = malloc_usable_size(src);
         free(src);
+    #else
+        #error "Don't know how to calculate malloc()'s unit size on this platform"
     #endif
     dst = malloc(unitsize);
     memset(dst, 'a', unitsize);
@@ -31,7 +33,7 @@ int extend_string_allocates_unitsize_blocks()
     src[(unitsize * 2) - 1] = '\0';
 
     fork_to_test(
-        #ifdef HAVE_MALLOC_GOOD_SIZE
+        #if HAVE_MALLOC_GOOD_SIZE == 1
             before = malloc_size(dst);
             extend_string(&dst, &dstlen, src, strlen(src), unitsize);
             after = malloc_size(dst);

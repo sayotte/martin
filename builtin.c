@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
+#include "message.h"
 #include "response.h"
 #include "request.h"
 #include "util.h"

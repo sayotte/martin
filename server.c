@@ -78,6 +78,7 @@ int start_server()
 {
     int             listen;
     int             error;
+    server_t        *srv;
     ev_io           *accept_watcher;
     struct ev_loop  *loop;
 
@@ -85,10 +86,12 @@ int start_server()
 
     load_plugins_dir("./plugins");
 
-    error = setup_routes();
-    if(error != 0)
+    srv = malloc(sizeof(server_t));
+
+    error = parse_routes("routes.txt", &srv->routes, &srv->numroutes);
+    if(error)
     {
-        syslog(LOG_CRIT, "%s(): Failed to compile route regexes, aborting!", __func__);
+        syslog(LOG_CRIT, "%s(): parse_routes() returned %d, aborting!", __func__, error);
         return 1;
     }
 
@@ -99,6 +102,7 @@ int start_server()
     accept_watcher = malloc(sizeof(ev_io));
     loop = EV_DEFAULT;
     ev_io_init(accept_watcher, accept_cb, listen, EV_READ);
+    accept_watcher->data = srv;
     ev_io_start(loop, accept_watcher);
 
     error = ev_run(loop, 0);
@@ -145,9 +149,10 @@ static void accept_cb(struct ev_loop *loop, ev_io *w, int revents)
     c->msg = create_message();
     c->fd = clientfd;
     c->loop = loop; /* Used if the ultimate request-handler needs to interact with libev */
-    c->io = w; /* Used if the ultimate request-handler needs to interact with libev */
+    c->srv = w->data;
 
     client_read_watcher = malloc(sizeof(ev_io));
+    c->io = client_read_watcher; /* Used if the ultimate request-handler needs to interact with libev */
     client_read_watcher->data = c;
     ev_io_init(client_read_watcher, clientread_cb, clientfd, EV_READ);
 

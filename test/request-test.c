@@ -3,13 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "test.h"
-#include "server.h" /* for client_t */
-/*
-typedef struct {
-    http_parser             *parser;
-    http_parser_settings    *parser_settings;
-} client_t;
-*/
+#include "message.h"
 #include "request.h"
 #include "http_parser.h"
 

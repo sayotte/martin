@@ -4,32 +4,12 @@
 #include <syslog.h>
 #include <string.h>
 #include "pcre.h"
+#include "message.h"
 #include "plugin.h"
-#include "route.h"
 #include "request.h"
+#include "route.h"
+#include "server.h"
 #include "util.h"
-
-route_t **GROUTES;
-int     GNUM_ROUTES;
-
-int setup_routes()
-{
-    int         status;
-    int         numroutes;
-    route_t     **routes;
-
-    status = parse_routes("routes.txt", &routes, &numroutes);
-    if(status)
-    {
-        syslog(LOG_WARNING, "%s(): parse_routes returned %d, leaving global route structure unchanged", __func__, status);
-        return status;
-    }
-
-    GROUTES = routes;
-    GNUM_ROUTES = numroutes;
-
-    return 0;
-}
 
 int parse_routes(const char *filename, route_t ***routelist, int *numroutes)
 {
@@ -240,10 +220,10 @@ int route_request(client_t *c)
 
     /*** I keep this here, hoping one day to do away with the global...
          Thank you http-parser for forcing me to use globals. ***/
-    routes = GROUTES;
+    routes = c->srv->routes;
 
     /* Find a matching route, matching on the (method, request_path) tuple */
-    for(i = 0; i < GNUM_ROUTES; i++)
+    for(i = 0; i < c->srv->numroutes; i++)
     {
         if(m->method != routes[i]->method)
             continue;

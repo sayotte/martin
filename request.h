@@ -1,17 +1,18 @@
-#ifndef REQUEST_H
-#define REQUEST_H
-#include "message.h"
+#ifndef _REQUEST_H
+#define _REQUEST_H
+#include "types.h"
 #include "http_parser.h"
 #include "ev.h"
 
-typedef struct {
+struct _client {
     http_parser             *parser;
     http_parser_settings    *parser_settings;
     int                     fd;
     struct ev_loop          *loop; /* Used if the ultimate request-handler needs to interact with libev */
     ev_io                   *io; /* Used if the ultimate request-handler needs to interact with libev */
+    server_t                *srv;
     message_t               *msg;
-} client_t;
+};
 
 int handle_read_data(client_t *c, char* buf, int len);
 

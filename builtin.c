@@ -13,16 +13,20 @@
 extern const char* r403_template;
 extern const char* r404_template;
 
-int get_static(int fd, message_t *m, char **splat, int splat_len)
+int get_static(client_t *c, char **splat, int splat_len)
 {
     preamble_t    h;
     off_t       size;
     char        filename[1024];
     char        *response_buf;
     int         error;
-    int         fh;
+    int         fd, fh;
+    message_t   *m;
 
     syslog(LOG_DEBUG, "%s():...", __func__);
+
+    fd = c->fd;
+    m = c->msg;
 
     init_response_preamble(&h);
 
@@ -81,6 +85,12 @@ int get_static(int fd, message_t *m, char **splat, int splat_len)
         goto cleanup;
     }
     /*** FIXME add code to send smaller chunks here ***/
+    /*** code should use libev to setup a callback, sending as much data as
+         possible on each callback, then polling on the write-ability of the
+         socket...
+         should probably *not* poll on the read-ability of the socket in the
+         meantime, lest we start processing another request from this client
+         before we finish responding to the last one ***/
     send_preamble(fd, &h);
     send_response_chunk(fd, response_buf, size);
     end_response_chunks(fd);

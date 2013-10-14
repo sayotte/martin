@@ -232,7 +232,7 @@ int route_request(client_t *c)
     int         substring_len;
     int         splat_len;
     message_t   *m;
-    int (*handler)(int, message_t*, char**, int);
+    int (*handler)(client_t*, char**, int);
     
     m = c->msg;
 
@@ -307,7 +307,7 @@ int route_request(client_t *c)
     }
 
     /* Call the handler associated with the route */
-    status = handler(c->fd, m, splat, splat_len);
+    status = handler(c, splat, splat_len);
     syslog(LOG_DEBUG, "%s(): Handler returned %d", __func__, status);
 
     /* Clean-up any matched strings we saved, since they were heap-allocated */

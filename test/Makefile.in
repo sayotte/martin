@@ -1,5 +1,5 @@
 CC = gcc
-CPPFLAGS = -I../ -I../@http_parser_path@/ -I../@pcre_path@/include/
+CPPFLAGS = -I../ -I../@http_parser_path@/ -I../@pcre_path@/include/ -I../@libev_path@/include/
 CFLAGS = -ggdb -Wall -Wextra -Werror -std=gnu99 -D_GNU_SOURCE
 LDFLAGS = @export_dynamic@
 VPATH = ../ ../@http_parser_path@/ ../@libev_path@/lib/ ../@pcre_path@/lib/

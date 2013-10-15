@@ -116,7 +116,6 @@ static void accept_cb(struct ev_loop *loop, ev_io *w, int revents)
     socklen_t           clientaddr_len;
     ev_io               *client_read_watcher;
     client_t            *c;
-    struct request      *req;
 
     clientaddr_len = sizeof(clientaddr);
     syslog(LOG_DEBUG, "%s(): accepting connection\n", __func__);
@@ -129,13 +128,9 @@ static void accept_cb(struct ev_loop *loop, ev_io *w, int revents)
     syslog(LOG_DEBUG, "%s(): accepted a connection", __func__);
 
     c = malloc(sizeof(client_t));
+
     c->parser = malloc(sizeof(http_parser));
     c->parser_settings = malloc(sizeof(http_parser_settings));
-    req = malloc(sizeof(request_t));
-    req->msg = create_message();
-    req->fd = clientfd;
-    c->parser->data = req;
-
     c->parser_settings->on_message_begin = on_message_begin;
     c->parser_settings->on_message_complete = on_message_complete;
     c->parser_settings->on_url = on_url;
@@ -144,8 +139,13 @@ static void accept_cb(struct ev_loop *loop, ev_io *w, int revents)
     c->parser_settings->on_header_value = on_header_value;
     c->parser_settings->on_headers_complete = on_headers_complete;
     c->parser_settings->on_body = on_body;
-
     http_parser_init(c->parser, HTTP_REQUEST);
+    c->parser->data = c;
+
+    c->msg = create_message();
+    c->fd = clientfd;
+    c->loop = loop; /* Used if the ultimate request-handler needs to interact with libev */
+    c->io = w; /* Used if the ultimate request-handler needs to interact with libev */
 
     client_read_watcher = malloc(sizeof(ev_io));
     client_read_watcher->data = c;
@@ -161,34 +161,30 @@ static void clientread_cb(struct ev_loop *loop, ev_io *w, int revents)
     char                    buf[MAX_ELEMENT_SIZE];
     ssize_t                 recved;
     client_t                *c;
-    request_t               *req;
 
     c = w->data;
-    req = c->parser->data;
 
-    recved = recv(req->fd, buf, MAX_ELEMENT_SIZE, 0);
+    recved = recv(w->fd, buf, MAX_ELEMENT_SIZE, 0);
     if(recved < 0)
     {   
         syslog(LOG_DEBUG, "%s(): recv() spit an error: '%s', cleaning up and closing the socket", __func__, strerror(errno));
         ev_io_stop(loop, w);
-        close(w->fd);
-        free(w);
-        destroy_message(req->msg);
-        free(c->parser->data);
         free(c->parser);
         free(c->parser_settings);
+        close(c->fd);
+        free(c->io); // same as w
+        destroy_message(c->msg);
         free(c);
     }
     else if(recved == 0)
     {   
         syslog(LOG_DEBUG, "%s(): remote peer closed the connection, cleaning up and closing the socket", __func__);
         ev_io_stop(loop, w);
-        close(w->fd);
-        free(w);
-        destroy_message(req->msg);
-        free(c->parser->data);
         free(c->parser);
         free(c->parser_settings);
+        close(c->fd);
+        free(c->io); // same as w
+        destroy_message(c->msg);
         free(c);
     }
     else

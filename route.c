@@ -108,7 +108,6 @@ int parse_routeline(char* line, route_t **route)
     char        method[16], path[256], handler[256];
     int         method_code;
     route_t     *myroute;
-    Dl_info info;
 
     /* Build the pattern we use to extract fields from the line */
     pattern = "^(\\w+)\\s+(\\S+)\\s+(\\S+)";
@@ -176,6 +175,7 @@ int parse_routeline(char* line, route_t **route)
         }
     #else
         /* Linux's dlsym() searches all loaded libraries for us */
+        Dl_info     info;
         FUNC = dlsym(RTLD_DEFAULT, handler);
         if(FUNC != NULL)
         {
@@ -222,7 +222,7 @@ int parse_routeline(char* line, route_t **route)
     return 0;
 }
 
-int route_request(struct request *req)
+int route_request(client_t *c)
 {
     route_t     **routes;
     int         i;
@@ -231,12 +231,10 @@ int route_request(struct request *req)
     char        *splat[MAX_OVECS / 2];
     int         substring_len;
     int         splat_len;
-    int         client;
     message_t   *m;
     int (*handler)(int, message_t*, char**, int);
     
-    client = req->fd;
-    m = req->msg;
+    m = c->msg;
 
     syslog(LOG_DEBUG, "%s():...", __func__);
 
@@ -309,7 +307,7 @@ int route_request(struct request *req)
     }
 
     /* Call the handler associated with the route */
-    status = handler(client, m, splat, splat_len);
+    status = handler(c->fd, m, splat, splat_len);
     syslog(LOG_DEBUG, "%s(): Handler returned %d", __func__, status);
 
     /* Clean-up any matched strings we saved, since they were heap-allocated */

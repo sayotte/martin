@@ -14,14 +14,13 @@ typedef struct {
 #include "http_parser.h"
 
 client_t                c;
-request_t               req;
 http_parser             parser;
 http_parser_settings    settings;
 
-int route_request(struct request *req)
+int route_request(client_t *c)
 {
     void    *shutup;
-    shutup = req;
+    shutup = c;
     shutup++;
 
     return 0;
@@ -45,9 +44,9 @@ int path_and_query_string_parsed_correctly()
 //        printf("\nrequest_path: %s\n", req.msg->request_path);
 //        printf("query_string: %s\n", req.msg->query_string);
 
-        if(strcmp(req.msg->request_path, "/api/transactions/asdlfkjasdf"))
+        if(strcmp(c.msg->request_path, "/api/transactions/asdlfkjasdf"))
             exit(1);
-        if(strcmp(req.msg->query_string, "ok=blah"))
+        if(strcmp(c.msg->query_string, "ok=blah"))
             exit(2);
 
         exit(0);
@@ -70,7 +69,7 @@ int http_version_is_parsed_correctly()
         bytes = handle_read_data(&c, buf, bytes);
     //    printf("Major: %d\tMinor: %d\n", req.msg->http_major, req.msg->http_minor);
 
-        if(req.msg->http_major == 1 && req.msg->http_minor == 1)
+        if(c.msg->http_major == 1 && c.msg->http_minor == 1)
             exit(0);
         else
             exit(1);
@@ -98,19 +97,19 @@ int headers_parsed_correctly()
 //            printf("Header[%d], Name->: '%s', Value: '%s'\n", bytes, req.msg->headers[bytes][0], req.msg->headers[bytes][1]);
 //        }
 
-        if(strcmp(req.msg->headers[0].name, "User-Agent"))
+        if(strcmp(c.msg->headers[0].name, "User-Agent"))
             exit(1);
-        if(strcmp(req.msg->headers[0].value, "curl/7.19.7 (universal-apple-darwin10.0) libcurl/7.19.7 OpenSSL/0.9.8x zlib/1.2.3"))
+        if(strcmp(c.msg->headers[0].value, "curl/7.19.7 (universal-apple-darwin10.0) libcurl/7.19.7 OpenSSL/0.9.8x zlib/1.2.3"))
             exit(2);
-        if(strcmp(req.msg->headers[1].name, "Host"))
+        if(strcmp(c.msg->headers[1].name, "Host"))
             exit(3);
-        if(strcmp(req.msg->headers[1].value, "localhost:8080"))
+        if(strcmp(c.msg->headers[1].value, "localhost:8080"))
             exit(4);
-        if(strcmp(req.msg->headers[2].name, "Accept"))
+        if(strcmp(c.msg->headers[2].name, "Accept"))
             exit(5);
-        if(strcmp(req.msg->headers[2].value, "*/*"))
+        if(strcmp(c.msg->headers[2].value, "*/*"))
             exit(6);
-        if(req.msg->num_headers != 3)
+        if(c.msg->num_headers != 3)
             exit(7);
 
         exit(0);
@@ -136,7 +135,7 @@ int body_is_parsed_correctly()
 
         bytes = handle_read_data(&c, buf, bytes);
 
-        if(strcmp(req.msg->body, expected_body))
+        if(strcmp(c.msg->body, expected_body))
             exit(1);
 
         exit(0);
@@ -158,7 +157,7 @@ int method_is_parsed_correctly()
 
         bytes = handle_read_data(&c, buf, bytes);
 
-        if(req.msg->method == HTTP_GET)
+        if(c.msg->method == HTTP_GET)
             exit(0);
         else
             exit(1);
@@ -175,8 +174,8 @@ int main()
 
     c.parser = &parser;
     c.parser_settings = &settings;
-    req.msg = create_message();
-    c.parser->data = &req;
+    c.msg = create_message();
+    c.parser->data = &c;
 
     c.parser_settings->on_message_begin = on_message_begin;
     c.parser_settings->on_message_complete = on_message_complete;

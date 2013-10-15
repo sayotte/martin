@@ -26,7 +26,6 @@ clean:
 	rm -f go
 	rm -f *.o
 	rm -f *$(SO_SUFFIX)
-	rm -f routes.c
 
 distclean: clean
 	rm Makefile
@@ -34,6 +33,7 @@ distclean: clean
 	rm test/Makefile
 	rm -rf autom4te.cache
 	rm config.h
+	rm version.h
 	rm config.log
 	rm config.status
 	rm configure

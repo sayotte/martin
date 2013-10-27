@@ -173,24 +173,12 @@ static void clientread_cb(struct ev_loop *loop, ev_io *w, int revents)
     if(recved < 0)
     {   
         syslog(LOG_DEBUG, "%s(): recv() spit an error: '%s', cleaning up and closing the socket", __func__, strerror(errno));
-        ev_io_stop(loop, w);
-        free(c->parser);
-        free(c->parser_settings);
-        close(c->fd);
-        free(c->io); // same as w
-        destroy_message(c->msg);
-        free(c);
+        terminate_client(c);
     }
     else if(recved == 0)
     {   
         syslog(LOG_DEBUG, "%s(): remote peer closed the connection, cleaning up and closing the socket", __func__);
-        ev_io_stop(loop, w);
-        free(c->parser);
-        free(c->parser_settings);
-        close(c->fd);
-        free(c->io); // same as w
-        destroy_message(c->msg);
-        free(c);
+        terminate_client(c);
     }
     else
     {
@@ -199,6 +187,24 @@ static void clientread_cb(struct ev_loop *loop, ev_io *w, int revents)
         if(nparsed != recved)
             ; /* FIXME do something here */
     }
+
+    return;
+}
+
+void terminate_client(client_t *c)
+{
+    struct ev_loop  *loop = c->loop;
+    ev_io           *w = c->io;
+
+    syslog(LOG_DEBUG, "%s(): ...", __func__);
+
+    ev_io_stop(loop, w);
+    free(c->parser);
+    free(c->parser_settings);
+    close(c->fd);
+    free(c->io); // same as w
+    destroy_message(c->msg);
+    free(c);
 
     return;
 }

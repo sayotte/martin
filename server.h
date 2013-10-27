@@ -8,4 +8,5 @@ struct _server {
 
 void init_logging();
 int start_server();
+void terminate_client(client_t *c);
 #endif

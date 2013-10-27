@@ -1,4 +1,6 @@
 #include <dlfcn.h>
+#include <setjmp.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
@@ -10,6 +12,9 @@
 #include "route.h"
 #include "server.h"
 #include "util.h"
+
+/* Used for returning control when we catch segfaults */
+jmp_buf context;
 
 int parse_routes(const char *filename, route_t ***routelist, int *numroutes)
 {
@@ -286,13 +291,37 @@ int route_request(client_t *c)
         }
     }
 
+    /* Prepare to catch segfaults thrown by the handler */
+    struct sigaction sa, old_sa;
+    memset(&sa, 0, sizeof(sigaction));
+    sigemptyset(&sa.sa_mask);
+    sa.sa_sigaction = catch_sigsegv_from_handler;
+    sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
+
+    sigaction(SIGSEGV, &sa, &old_sa);
+    if(setjmp(context))
+    {
+        syslog(LOG_ERR, "%s(): Caught SIGSEGV from handler, if the heap was mangled we may not recover cleanly!", __func__);
+        terminate_client(c);
+    }
     /* Call the handler associated with the route */
-    status = handler(c, splat, splat_len);
-    syslog(LOG_DEBUG, "%s(): Handler returned %d", __func__, status);
+    else 
+    {
+        status = handler(c, splat, splat_len);
+        syslog(LOG_DEBUG, "%s(): Handler returned %d", __func__, status);
+    }
+    /* Restore signal handling for segfaults */
+    sigaction(SIGSEGV, &old_sa, NULL);
 
     /* Clean-up any matched strings we saved, since they were heap-allocated */
     for(i=0; i < splat_len; i++)
         free(splat[i]);
 
     return 0;
+}
+
+void catch_sigsegv_from_handler(int signal, siginfo_t *si, void *arg)
+{
+    syslog(LOG_DEBUG, "%s(): Caught segfault trying to access address %p", __func__, si->si_addr);
+    longjmp(context, SIGSEGV);
 }

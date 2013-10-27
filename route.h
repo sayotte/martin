@@ -1,5 +1,6 @@
 #ifndef _ROUTE_H
 #define _ROUTE_H
+#include <sys/types.h>
 #include "types.h"
 #include "pcre.h"
 #include "http_parser.h"
@@ -16,4 +17,5 @@ int setup_routes();
 int route_request(client_t *c);
 int parse_routes(const char *filename, route_t ***routelist, int *numroutes);
 int parse_routeline(char* line, route_t **route);
+void catch_sigsegv_from_handler(int signal, siginfo_t *si, void *arg);
 #endif

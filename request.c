@@ -25,7 +25,7 @@ int on_message_complete(http_parser *parser)
 
     syslog(LOG_DEBUG, "-------- response should be generated at this point ---------");
 
-    route_request((struct request *)parser->data);
+    route_request((client_t *)parser->data);
 
     return 0;
 }
@@ -33,11 +33,11 @@ int on_message_complete(http_parser *parser)
 int on_url(http_parser *parser, const char *at, size_t len)
 {
     char    tok[256];
-    struct request  *req;
+    client_t        *c;
     message_t       *msg;
 
-    req = parser->data;
-    msg = req->msg;
+    c = parser->data;
+    msg = c->msg;
 
     /* Append to the growing URL; we'll break it down later */
     extend_message_url(msg, at, len);
@@ -59,11 +59,11 @@ int on_status_complete(http_parser *parser)
 int on_header_field(http_parser *parser, const char *at, size_t len)
 {
     char    tok[256];
-    struct request  *req;
+    client_t        *c;
     message_t       *msg;
 
-    req = parser->data;
-    msg = req->msg;
+    c = parser->data;
+    msg = c->msg;
 
     /* If we were last working on a value, we're in a new header now. */
     if(msg->last_header_element == VALUE || msg->last_header_element == NONE)
@@ -85,11 +85,11 @@ int on_header_field(http_parser *parser, const char *at, size_t len)
 int on_header_value(http_parser *parser, const char *at, size_t len)
 {
     char    tok[256];
-    struct request  *req;
+    client_t        *c;
     message_t       *msg;
 
-    req = parser->data;
-    msg = req->msg;
+    c = parser->data;
+    msg = c->msg;
 
     extend_message_header_value(msg, msg->num_headers - 1, at, len);
 
@@ -105,11 +105,11 @@ int on_header_value(http_parser *parser, const char *at, size_t len)
 
 int on_headers_complete(http_parser *parser)
 {
-    struct request  *req;
+    client_t        *c;
     message_t       *msg;
 
-    req = parser->data;
-    msg = req->msg;
+    c = parser->data;
+    msg = c->msg;
     syslog(LOG_DEBUG, "%s()...", __func__);
 
     /* Store HTTP major/minor codes */
@@ -156,10 +156,10 @@ int on_headers_complete(http_parser *parser)
 
 int on_body(http_parser *parser, const char *at, size_t len)
 {
-    struct request  *req;
+    client_t    *c;
 
-    req = parser->data;
-    extend_message_body(req->msg, at, len);
+    c = parser->data;
+    extend_message_body(c->msg, at, len);
 
     syslog(LOG_DEBUG, "%s():...", __func__);
     return 0;

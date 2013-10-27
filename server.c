@@ -78,6 +78,7 @@ int start_server()
 {
     int             listen;
     int             error;
+    server_t        *srv;
     ev_io           *accept_watcher;
     struct ev_loop  *loop;
 
@@ -85,10 +86,12 @@ int start_server()
 
     load_plugins_dir("./plugins");
 
-    error = setup_routes();
-    if(error != 0)
+    srv = malloc(sizeof(server_t));
+
+    error = parse_routes("routes.txt", &srv->routes, &srv->numroutes);
+    if(error)
     {
-        syslog(LOG_CRIT, "%s(): Failed to compile route regexes, aborting!", __func__);
+        syslog(LOG_CRIT, "%s(): parse_routes() returned %d, aborting!", __func__, error);
         return 1;
     }
 
@@ -99,6 +102,7 @@ int start_server()
     accept_watcher = malloc(sizeof(ev_io));
     loop = EV_DEFAULT;
     ev_io_init(accept_watcher, accept_cb, listen, EV_READ);
+    accept_watcher->data = srv;
     ev_io_start(loop, accept_watcher);
 
     error = ev_run(loop, 0);
@@ -116,7 +120,6 @@ static void accept_cb(struct ev_loop *loop, ev_io *w, int revents)
     socklen_t           clientaddr_len;
     ev_io               *client_read_watcher;
     client_t            *c;
-    struct request      *req;
 
     clientaddr_len = sizeof(clientaddr);
     syslog(LOG_DEBUG, "%s(): accepting connection\n", __func__);
@@ -129,13 +132,9 @@ static void accept_cb(struct ev_loop *loop, ev_io *w, int revents)
     syslog(LOG_DEBUG, "%s(): accepted a connection", __func__);
 
     c = malloc(sizeof(client_t));
+
     c->parser = malloc(sizeof(http_parser));
     c->parser_settings = malloc(sizeof(http_parser_settings));
-    req = malloc(sizeof(request_t));
-    req->msg = create_message();
-    req->fd = clientfd;
-    c->parser->data = req;
-
     c->parser_settings->on_message_begin = on_message_begin;
     c->parser_settings->on_message_complete = on_message_complete;
     c->parser_settings->on_url = on_url;
@@ -144,10 +143,16 @@ static void accept_cb(struct ev_loop *loop, ev_io *w, int revents)
     c->parser_settings->on_header_value = on_header_value;
     c->parser_settings->on_headers_complete = on_headers_complete;
     c->parser_settings->on_body = on_body;
-
     http_parser_init(c->parser, HTTP_REQUEST);
+    c->parser->data = c;
+
+    c->msg = create_message();
+    c->fd = clientfd;
+    c->loop = loop; /* Used if the ultimate request-handler needs to interact with libev */
+    c->srv = w->data;
 
     client_read_watcher = malloc(sizeof(ev_io));
+    c->io = client_read_watcher; /* Used if the ultimate request-handler needs to interact with libev */
     client_read_watcher->data = c;
     ev_io_init(client_read_watcher, clientread_cb, clientfd, EV_READ);
 
@@ -161,35 +166,19 @@ static void clientread_cb(struct ev_loop *loop, ev_io *w, int revents)
     char                    buf[MAX_ELEMENT_SIZE];
     ssize_t                 recved;
     client_t                *c;
-    request_t               *req;
 
     c = w->data;
-    req = c->parser->data;
 
-    recved = recv(req->fd, buf, MAX_ELEMENT_SIZE, 0);
+    recved = recv(w->fd, buf, MAX_ELEMENT_SIZE, 0);
     if(recved < 0)
     {   
         syslog(LOG_DEBUG, "%s(): recv() spit an error: '%s', cleaning up and closing the socket", __func__, strerror(errno));
-        ev_io_stop(loop, w);
-        close(w->fd);
-        free(w);
-        destroy_message(req->msg);
-        free(c->parser->data);
-        free(c->parser);
-        free(c->parser_settings);
-        free(c);
+        terminate_client(c);
     }
     else if(recved == 0)
     {   
         syslog(LOG_DEBUG, "%s(): remote peer closed the connection, cleaning up and closing the socket", __func__);
-        ev_io_stop(loop, w);
-        close(w->fd);
-        free(w);
-        destroy_message(req->msg);
-        free(c->parser->data);
-        free(c->parser);
-        free(c->parser_settings);
-        free(c);
+        terminate_client(c);
     }
     else
     {
@@ -198,6 +187,24 @@ static void clientread_cb(struct ev_loop *loop, ev_io *w, int revents)
         if(nparsed != recved)
             ; /* FIXME do something here */
     }
+
+    return;
+}
+
+void terminate_client(client_t *c)
+{
+    struct ev_loop  *loop = c->loop;
+    ev_io           *w = c->io;
+
+    syslog(LOG_DEBUG, "%s(): ...", __func__);
+
+    ev_io_stop(loop, w);
+    free(c->parser);
+    free(c->parser_settings);
+    close(c->fd);
+    free(c->io); // same as w
+    destroy_message(c->msg);
+    free(c);
 
     return;
 }

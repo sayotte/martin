@@ -1,35 +1,20 @@
 #include <dlfcn.h>
+#include <setjmp.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
 #include <string.h>
 #include "pcre.h"
+#include "message.h"
 #include "plugin.h"
-#include "route.h"
 #include "request.h"
+#include "route.h"
+#include "server.h"
 #include "util.h"
 
-route_t **GROUTES;
-int     GNUM_ROUTES;
-
-int setup_routes()
-{
-    int         status;
-    int         numroutes;
-    route_t     **routes;
-
-    status = parse_routes("routes.txt", &routes, &numroutes);
-    if(status)
-    {
-        syslog(LOG_WARNING, "%s(): parse_routes returned %d, leaving global route structure unchanged", __func__, status);
-        return status;
-    }
-
-    GROUTES = routes;
-    GNUM_ROUTES = numroutes;
-
-    return 0;
-}
+/* Used for returning control when we catch segfaults */
+jmp_buf context;
 
 int parse_routes(const char *filename, route_t ***routelist, int *numroutes)
 {
@@ -108,7 +93,6 @@ int parse_routeline(char* line, route_t **route)
     char        method[16], path[256], handler[256];
     int         method_code;
     route_t     *myroute;
-    Dl_info info;
 
     /* Build the pattern we use to extract fields from the line */
     pattern = "^(\\w+)\\s+(\\S+)\\s+(\\S+)";
@@ -176,6 +160,7 @@ int parse_routeline(char* line, route_t **route)
         }
     #else
         /* Linux's dlsym() searches all loaded libraries for us */
+        Dl_info     info;
         FUNC = dlsym(RTLD_DEFAULT, handler);
         if(FUNC != NULL)
         {
@@ -222,7 +207,7 @@ int parse_routeline(char* line, route_t **route)
     return 0;
 }
 
-int route_request(struct request *req)
+int route_request(client_t *c)
 {
     route_t     **routes;
     int         i;
@@ -231,21 +216,19 @@ int route_request(struct request *req)
     char        *splat[MAX_OVECS / 2];
     int         substring_len;
     int         splat_len;
-    int         client;
     message_t   *m;
-    int (*handler)(int, message_t*, char**, int);
+    int (*handler)(client_t*, char**, int);
     
-    client = req->fd;
-    m = req->msg;
+    m = c->msg;
 
     syslog(LOG_DEBUG, "%s():...", __func__);
 
     /*** I keep this here, hoping one day to do away with the global...
          Thank you http-parser for forcing me to use globals. ***/
-    routes = GROUTES;
+    routes = c->srv->routes;
 
     /* Find a matching route, matching on the (method, request_path) tuple */
-    for(i = 0; i < GNUM_ROUTES; i++)
+    for(i = 0; i < c->srv->numroutes; i++)
     {
         if(m->method != routes[i]->method)
             continue;
@@ -308,13 +291,37 @@ int route_request(struct request *req)
         }
     }
 
+    /* Prepare to catch segfaults thrown by the handler */
+    struct sigaction sa, old_sa;
+    memset(&sa, 0, sizeof(sigaction));
+    sigemptyset(&sa.sa_mask);
+    sa.sa_sigaction = catch_sigsegv_from_handler;
+    sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
+
+    sigaction(SIGSEGV, &sa, &old_sa);
+    if(setjmp(context))
+    {
+        syslog(LOG_ERR, "%s(): Caught SIGSEGV from handler, if the heap was mangled we may not recover cleanly!", __func__);
+        terminate_client(c);
+    }
     /* Call the handler associated with the route */
-    status = handler(client, m, splat, splat_len);
-    syslog(LOG_DEBUG, "%s(): Handler returned %d", __func__, status);
+    else 
+    {
+        status = handler(c, splat, splat_len);
+        syslog(LOG_DEBUG, "%s(): Handler returned %d", __func__, status);
+    }
+    /* Restore signal handling for segfaults */
+    sigaction(SIGSEGV, &old_sa, NULL);
 
     /* Clean-up any matched strings we saved, since they were heap-allocated */
     for(i=0; i < splat_len; i++)
         free(splat[i]);
 
     return 0;
+}
+
+void catch_sigsegv_from_handler(int signal, siginfo_t *si, void *arg)
+{
+    syslog(LOG_DEBUG, "%s(): Caught segfault trying to access address %p", __func__, si->si_addr);
+    longjmp(context, SIGSEGV);
 }

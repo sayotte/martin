@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
+#include "message.h"
 #include "response.h"
 #include "request.h"
 #include "util.h"
@@ -13,7 +14,7 @@
 extern const char* r403_template;
 extern const char* r404_template;
 
-int put_transaction(int fd, message_t *m, char **splat, int splat_len)
+int put_transaction(client_t *c, char **splat, int splat_len)
 {
     int     i;
     syslog(LOG_DEBUG, "%s():...", __func__);
@@ -25,7 +26,7 @@ int put_transaction(int fd, message_t *m, char **splat, int splat_len)
     return 0;
 }
 
-int get_all_transactions(int fd, message_t *m, char **splat, int splat_len)
+int get_all_transactions(client_t *c, char **splat, int splat_len)
 {
     int     i;
     syslog(LOG_DEBUG, "%s():...", __func__);
@@ -37,11 +38,13 @@ int get_all_transactions(int fd, message_t *m, char **splat, int splat_len)
     return 0;
 }
 
-int get_transaction(int fd, message_t *m, char **splat, int splat_len)
+int get_transaction(client_t *c, char **splat, int splat_len)
 {
-    preamble_t    h;
+    int         fd = c->fd;
+    message_t   *m = c->msg;
+    preamble_t  h;
 
-    syslog(LOG_DEBUG, "%s():...", __func__);
+    syslog(LOG_DEBUG, "%s(%p, %p, %d): ...", __func__, c, splat, splat_len);
 
     init_response_preamble(&h);
     add_response_header(&h, "Connection: close");

@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.61)
 AC_INIT([martin], [0.1], [stephen.ayotte@gmail.com])
-#AC_CONFIG_HEADER([config.h Makefile])
+AC_CONFIG_HEADER([version.h])
 
 AC_ARG_WITH(http-parser, [  --with-http-parser=DIR  Path to http-parser installation @<:@./http-parser@:>@], [http_parser_path=$withval], [http_parser_path=http-parser])
 AC_ARG_WITH(pcre, [  --with-pcre=DIR         Path to pcre installation @<:@./pcre@:>@], [pcre_path=$withval], [pcre_path=pcre])

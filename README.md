@@ -4,18 +4,18 @@ An HTTP server that can be extended with small plugins, which can be invoked via
 
 Martin is now dead code. It was a pet project that I used to learn more deeply: 
 
-   * HTTP and the http-parser library
-   * the reactor pattern and libevent/libev
-   * dynamic-loading of libs at runtime
-   * autoconf 
-   * libpcre
-   * recovering from segfaults
-   * sub-process control (in the early multi-process model)
-   * SysV IPC (in the early multi-process model)
-   * ... and some other ambitions I didn't get around to:
-      * embedding a Perl or Python interpreter
-      * interacting with Protocol Buffers in C
-      * incorporating a small (as opposed to bloaty, like JSON or YAML) config-file language
+  * HTTP and the http-parser library
+  * the reactor pattern and libevent/libev
+  * dynamic-loading of libs at runtime
+  * autoconf 
+  * libpcre
+  * recovering from segfaults
+  * sub-process control (in the early multi-process model)
+  * SysV IPC (in the early multi-process model)
+  * ... and some other ambitions I didn't get around to:
+    * embedding a Perl or Python interpreter
+    * interacting with Protocol Buffers in C
+    * incorporating a small (as opposed to bloaty, like JSON or YAML) config-file language
 
 After working on it in my spare time for a few months I learned some things that made further development without a top-down rewrite seem... a bad choice, technically. The project was really for learning to begin with, and a rewrite sounded very boring, so I've put it down for now / likely forever.
 
